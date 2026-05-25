@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API = "http://localhost:5000/api/auth";
+const API = "https://smart-pg-backend-9l7f.onrender.com/api/auth";
 
 // Signup
 export const signupUser = async (userData) => {
