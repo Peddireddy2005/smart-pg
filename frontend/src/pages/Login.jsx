@@ -20,6 +20,7 @@ function Login() {
   };
 
   const handleSubmit = async (e) => {
+    console.log("Login button clicked");
     e.preventDefault();
 
     try {
