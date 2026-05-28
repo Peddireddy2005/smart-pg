@@ -9,7 +9,7 @@ function OwnerPGDetails(){
         const fetchRooms = async()=>{
             try{
                 const data = await getRoomsOfPG(pgId);
-                setRooms(data);
+                setRooms(data.rooms);
             } catch (error) {
                 console.error("Error fetching rooms:", error);
             }
