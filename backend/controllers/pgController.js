@@ -88,8 +88,20 @@ const getSinglePG = async (req, res) => {
 
 };
 
+const getMyPGs = async(req,res) =>{
+    try{
+        const pgs = await PG.find({owner:req.user._id});
+        res.status(200).json(pgs);
+    }catch(error){
+        res.status(500).json({
+            message:error.message
+        });
+    }
+}
+
 module.exports = {
     createPG,
     getAllPGs,
-    getSinglePG
+    getSinglePG,
+    getMyPGs
 };

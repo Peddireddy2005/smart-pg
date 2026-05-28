@@ -5,7 +5,7 @@ const router = express.Router();
 const {
     createPG,
     getAllPGs,
-    getSinglePG
+    getSinglePG,
 } = require("../controllers/pgController");
 
 const { getRoomsOfPG } = require("../controllers/roomController");
@@ -26,5 +26,7 @@ router.get("/", getAllPGs);
 router.get("/:pgId/rooms", getRoomsOfPG);
 
 router.get("/:id", getSinglePG);
+
+router.get("/my-pgs", protect, ownerOnly, getMyPGs);
 
 module.exports = router;
