@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getRoomsOfPG } from "../services/roomService";
 
 function OwnerPGDetails() {
+  console.log("OwnerPGDetails loaded");
   const { pgId } = useParams();
   const [rooms, setRooms] = useState([]);
 
