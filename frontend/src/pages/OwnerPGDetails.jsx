@@ -21,7 +21,7 @@ function OwnerPGDetails() {
 
     fetchRooms();
   }, [pgId]);
-
+  console.log("rooms state:", rooms);
   return (
     <div>
       <h1>PG Details</h1>
