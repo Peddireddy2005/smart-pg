@@ -23,7 +23,7 @@ function OwnerPGDetails(){
                 + Add Room
             </Link>
             <div >
-                {rooms.map((room) => (
+                {rooms?.map((room) => (
                     <div key={room._id}>
                         <h3>{room.roomNumber}</h3>
                         <p>Capacity:{room.capacity}</p>
