@@ -20,7 +20,7 @@ function OwnerPGDetails(){
     }, [pgId]);
     return(
         <div>
-            <h1>PG Details</h1>
+            <h1>PG Details: {pgId}</h1>
             <Link to={`/owner/pg/${pgId}/add-room`}>
                 + Add Room
             </Link>
