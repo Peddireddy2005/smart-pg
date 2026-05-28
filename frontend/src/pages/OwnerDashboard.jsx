@@ -39,10 +39,8 @@ function OwnerDashboard() {
 
       <div className="grid gap-4">
         {pgs.map((pg) => (
-          <div
-            key={pg._id}
-            className="border p-4 rounded shadow"
-          >
+        <Link key={pg._id} to={`/owner/pg/${pg._id}`} className="block">
+          <div className="border p-4 rounded shadow">
             <h2 className="text-xl font-semibold">
               {pg.name}
             </h2>
@@ -53,6 +51,7 @@ function OwnerDashboard() {
 
             <p>₹ {pg.rentRange}</p>
           </div>
+        </Link>
         ))}
       </div>
     </div>
