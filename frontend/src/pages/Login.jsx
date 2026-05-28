@@ -32,8 +32,15 @@ function Login() {
       localStorage.setItem("token", data.token);
 
       alert("Login successful");
-
-      navigate("/");
+      const token = data.token;
+      localStorage.setItem("token", token);
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (payload.role === "owner") {
+        navigate("/owner/dashboard");
+      } else {
+        navigate("/");
+      }
+      
     } catch (error) {
       console.log(error.response?.data);
 
