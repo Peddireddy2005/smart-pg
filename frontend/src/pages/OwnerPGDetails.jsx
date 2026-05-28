@@ -8,12 +8,12 @@ function OwnerPGDetails(){
     useEffect(()=>{
         const fetchRooms = async()=>{
             try{
-                console.log("pgId:", pgId);
+                console.log("PG ID:", pgId);
                 const data = await getRoomsOfPG(pgId);
-                console.log("rooms response:", data);
+                 console.log("ROOM DATA:", data);
                 setRooms(data.rooms || data);
             } catch (error) {
-                console.error("Error fetching rooms:", error);
+                console.log("FETCH ROOMS ERROR:", error);
             }
         }
         fetchRooms();
