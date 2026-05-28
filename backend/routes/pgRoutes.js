@@ -6,6 +6,7 @@ const {
     createPG,
     getAllPGs,
     getSinglePG,
+    getMyPGs,
 } = require("../controllers/pgController");
 
 const { getRoomsOfPG } = require("../controllers/roomController");
@@ -22,11 +23,14 @@ router.post(
 );
 
 router.get("/", getAllPGs);
-
+router.get("/my-pgs", protect, ownerOnly, (req, res, next) => {
+  console.log("MY-PGS ROUTE HIT");
+  next();
+}, getMyPGs);
 router.get("/:pgId/rooms", getRoomsOfPG);
-
-router.get("/:id", getSinglePG);
-
-router.get("/my-pgs", protect, ownerOnly, getMyPGs);
+router.get("/:id", (req, res, next) => {
+  console.log("ID ROUTE HIT:", req.params.id);
+  next();
+}, getSinglePG);
 
 module.exports = router;

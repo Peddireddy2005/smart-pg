@@ -10,7 +10,7 @@ function OwnerDashboard() {
                 const data = await getMyPGs();
                 setPGs(data);
             } catch(error){
-                console.lof(error.response?.data);
+                console.log(error.response?.data);
                 alert(
                     error.response?.data?.message ||
                     error.message ||
