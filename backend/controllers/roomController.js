@@ -144,98 +144,75 @@ const getSingleRoom = async (req, res) => {
 };
 
 const allocateResident = async (req, res) => {
+  try {
+    const { residentId, roomId } = req.body;
 
-    try {
+    const resident = await User.findById(residentId);
 
-        const { residentId, roomId } = req.body;
-
-        // check resident exists
-        const resident = await User.findById(residentId);
-
-        if (!resident) {
-
-            return res.status(404).json({
-                message: "Resident not found"
-            });
-
-        }
-
-        // resident role check
-        if (resident.role !== "resident") {
-
-            return res.status(400).json({
-                message: "User is not a resident"
-            });
-
-        }
-
-        // check room exists
-        const room = await Room.findById(roomId)
-            .populate("pg");
-
-        if (!room) {
-
-            return res.status(404).json({
-                message: "Room not found"
-            });
-
-        }
-
-        // ownership validation
-        if (
-            room.pg.owner.toString() !==
-            req.user._id.toString()
-        ) {
-
-            return res.status(403).json({
-                message: "You do not own this PG"
-            });
-
-        }
-
-        // room full check
-        if (room.occupancy >= room.capacity) {
-
-            return res.status(400).json({
-                message: "Room is full"
-            });
-
-        }
-
-        // duplicate allocation check
-        if (resident.assignedRoom) {
-
-            return res.status(400).json({
-                message: "Resident already allocated"
-            });
-
-        }
-
-        // assign room
-        resident.assignedRoom = room._id;
-
-        resident.assignedPG = room.pg._id;
-
-        await resident.save();
-
-        // increase occupancy
-        room.occupancy += 1;
-
-        await room.save();
-
-        res.status(200).json({
-            message: "Resident allocated successfully",
-            resident
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!resident) {
+      return res.status(404).json({
+        message: "Resident not found",
+      });
     }
 
+    if (resident.role !== "resident") {
+      return res.status(400).json({
+        message: "User is not a resident",
+      });
+    }
+
+    const room = await Room.findById(roomId).populate("pg");
+
+    if (!room) {
+      return res.status(404).json({
+        message: "Room not found",
+      });
+    }
+
+    if (
+      room.pg.owner.toString() !==
+      req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        message: "You do not own this PG",
+      });
+    }
+
+    if (room.occupancy >= room.capacity) {
+      return res.status(400).json({
+        message: "Room is full",
+      });
+    }
+
+    if (resident.assignedRoom) {
+      return res.status(400).json({
+        message: "Resident already allocated",
+      });
+    }
+
+    // assign room to resident
+    resident.assignedRoom = room._id;
+    resident.assignedPG = room.pg._id;
+
+    await resident.save();
+
+    // IMPORTANT FIX
+    room.residents.push(resident._id);
+
+    room.occupancy += 1;
+
+    await room.save();
+
+    res.status(200).json({
+      message: "Resident allocated successfully",
+      resident,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
 };
 
 const removeResident = async (req, res) => {
@@ -280,7 +257,9 @@ const removeResident = async (req, res) => {
 
         // decrease occupancy
         room.occupancy -= 1;
-
+        room.residents = room.residents.filter(
+            (id) => id.toString() !== residentId
+        );
         await room.save();
 
         // remove assignment
