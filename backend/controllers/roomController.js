@@ -196,6 +196,10 @@ const allocateResident = async (req, res) => {
 
     await resident.save();
 
+    if (!room.residents) {
+        room.residents = [];
+    }
+
     // IMPORTANT FIX
     room.residents.push(resident._id);
 

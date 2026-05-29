@@ -51,11 +51,13 @@ function OwnerPGDetails() {
               <h4>Residents:</h4>
 
               {room.residents && room.residents.length > 0 ? (
-                room.residents.map((resident) => (
-                  <p key={resident._id}>
-                    • {resident.name}
-                  </p>
-                ))
+                <ul>
+                  {room.residents.map((resident) => (
+                    <li key={resident._id}>
+                      {resident.name}
+                    </li>
+                  ))}
+                </ul>
               ) : (
                 <p>No residents assigned</p>
               )}
