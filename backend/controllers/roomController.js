@@ -16,7 +16,6 @@ const createRoom = async (req, res) => {
             pgId
         } = req.body;
 
-        // validation
         if (capacity <= 0) {
 
             return res.status(400).json({
@@ -106,9 +105,7 @@ const getRoomsOfPG = async (req, res) => {
 
     try {
 
-        const rooms = await Room.find({
-            pg: req.params.pgId
-        });
+        const rooms = await Room.find({pg: req.params.pgId,}).populate("residents");
 
         res.status(200).json(rooms);
 

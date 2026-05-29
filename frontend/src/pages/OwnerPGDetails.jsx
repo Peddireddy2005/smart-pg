@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { getRoomsOfPG } from "../services/roomService";
 
 function OwnerPGDetails() {
-  console.log("OwnerPGDetails loaded");
   const { pgId } = useParams();
   const [rooms, setRooms] = useState([]);
 
@@ -22,7 +21,7 @@ function OwnerPGDetails() {
 
     fetchRooms();
   }, [pgId]);
-  console.log("rooms state:", rooms);
+
   return (
     <div>
       <h1>PG Details</h1>
@@ -43,10 +42,27 @@ function OwnerPGDetails() {
               }}
             >
               <h3>Room {room.roomNumber}</h3>
+
               <p>Capacity: {room.capacity}</p>
               <p>Occupied: {room.occupancy}</p>
               <p>Vacant: {room.capacity - room.occupancy}</p>
               <p>Rent: ₹{room.rent}</p>
+
+              <h4>Residents:</h4>
+
+              {room.residents && room.residents.length > 0 ? (
+                room.residents.map((resident) => (
+                  <p key={resident._id}>
+                    • {resident.name}
+                  </p>
+                ))
+              ) : (
+                <p>No residents assigned</p>
+              )}
+
+              <Link to={`/owner/pg/${pgId}/allocate-resident`}>
+                + Allocate Resident
+              </Link>
             </div>
           ))
         ) : (

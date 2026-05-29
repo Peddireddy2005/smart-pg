@@ -26,6 +26,10 @@ const roomSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "PG",
         required: true
+    },
+    residents:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Resident"
     }
 
 }, {
