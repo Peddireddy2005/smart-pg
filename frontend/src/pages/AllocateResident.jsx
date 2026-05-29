@@ -19,6 +19,9 @@ function AllocateResident() {
 
       alert("Resident allocated successfully!");
 
+      setResidentId("");
+      setRoomId("");
+
       navigate(`/owner/pg/${pgId}`);
     } catch (error) {
       console.error("Error allocating resident:", error);
@@ -40,7 +43,7 @@ function AllocateResident() {
         <div>
           <input
             type="text"
-            placeholder="Resident ID"
+            placeholder="Enter Resident ID"
             value={residentId}
             onChange={(e) => setResidentId(e.target.value)}
             required
@@ -52,7 +55,7 @@ function AllocateResident() {
         <div>
           <input
             type="text"
-            placeholder="Room ID"
+            placeholder="Enter Room ID"
             value={roomId}
             onChange={(e) => setRoomId(e.target.value)}
             required
@@ -61,8 +64,11 @@ function AllocateResident() {
 
         <br />
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Allocating..." : "Allocate"}
+        <button
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? "Allocating..." : "Allocate Resident"}
         </button>
       </form>
     </div>
