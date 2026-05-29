@@ -9,6 +9,7 @@ import OwnerDashboard from "./pages/OwnerDashboard";
 import AddPG from "./pages/AddPG";
 import OwnerPGDetails from "./pages/OwnerPGDetails";
 import AddRoom from "./pages/AddRoom";
+import AllocateResident from "./pages/AllocateResident";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/owner/add-pg" element={<AddPG />} />
         <Route path="/owner/pg/:pgId" element={<OwnerPGDetails />} />
         <Route path="/owner/pg/:pgId/add-room" element={<AddRoom />} />
+        <Route path="/owner/pg/:pgId/allocate-resident" element={<AllocateResident />} />
       </Routes>
     </>
   );
