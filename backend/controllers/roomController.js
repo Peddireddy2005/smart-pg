@@ -1,9 +1,6 @@
 const Room = require("../models/Room");
-
 const PG = require("../models/PG");
-
 const User = require("../models/User");
-
 const createRoom = async (req, res) => {
 
     try {
