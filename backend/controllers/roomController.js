@@ -101,6 +101,8 @@ const createRoom = async (req, res) => {
 const getRoomsOfPG = async (req, res) => {
 
     try {
+        console.log("GET ROOMS ROUTE HIT");
+        console.log("PG ID:", req.params.pgId);
 
         const rooms = await Room.find({pg: req.params.pgId,}).populate("residents");
 

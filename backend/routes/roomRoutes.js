@@ -32,10 +32,10 @@ router.post(
 );
 
 router.post(
-    "/remove-resident",
-    protect,
-    ownerOnly,
-    removeResident
+  "/remove-resident",
+  protect,
+  ownerOnly,
+  removeResident
 );
 
 router.get("/:id", getSingleRoom);
