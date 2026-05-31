@@ -222,71 +222,60 @@ const allocateResident = async (req, res) => {
 };
 
 const removeResident = async (req, res) => {
+  try {
+    const { residentId } = req.body;
 
-    try {
+    const resident = await User.findById(residentId);
 
-        const { residentId } = req.body;
-
-        const resident = await User.findById(residentId);
-
-        if (!resident) {
-
-            return res.status(404).json({
-                message: "Resident not found"
-            });
-
-        }
-
-        if (!resident.assignedRoom) {
-
-            return res.status(400).json({
-                message: "Resident has no room assigned"
-            });
-
-        }
-
-        const room = await Room.findById(
-            resident.assignedRoom
-        ).populate("pg");
-
-        // ownership validation
-        if (
-            room.pg.owner.toString() !==
-            req.user._id.toString()
-        ) {
-
-            return res.status(403).json({
-                message: "You do not own this PG"
-            });
-
-        }
-
-        // decrease occupancy
-        room.occupancy -= 1;
-        room.residents = room.residents.filter(
-            (id) => id.toString() !== residentId
-        );
-        await room.save();
-
-        // remove assignment
-        resident.assignedRoom = null;
-
-        resident.assignedPG = null;
-
-        await resident.save();
-
-        res.status(200).json({
-            message: "Resident removed successfully"
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+    if (!resident) {
+      return res.status(404).json({
+        message: "Resident not found",
+      });
     }
 
+    if (!resident.assignedRoom) {
+      return res.status(400).json({
+        message: "Resident is not assigned to any room",
+      });
+    }
+
+    const room = await Room.findById(
+      resident.assignedRoom
+    );
+
+    if (!room) {
+      return res.status(404).json({
+        message: "Room not found",
+      });
+    }
+
+    // SAFE FIX
+    if (!room.residents) {
+      room.residents = [];
+    }
+
+    room.residents = room.residents.filter(
+      (id) => id.toString() !== residentId
+    );
+
+    room.occupancy -= 1;
+
+    await room.save();
+
+    resident.assignedRoom = null;
+    resident.assignedPG = null;
+
+    await resident.save();
+
+    res.status(200).json({
+      message: "Resident removed successfully",
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
 };
 
 module.exports = {
