@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { allocateResidentToRoom } from "../services/roomService";
 
 function AllocateResident() {
   const { pgId } = useParams();
   const navigate = useNavigate();
+
   const [residentId, setResidentId] = useState("");
   const [roomId, setRoomId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ function AllocateResident() {
 
       alert(
         error.response?.data?.message ||
-          "Failed to allocate resident"
+        "Failed to allocate resident"
       );
     } finally {
       setLoading(false);
@@ -38,6 +39,13 @@ function AllocateResident() {
   return (
     <div>
       <h1>Allocate Resident</h1>
+
+      <Link to={`/owner/pg/${pgId}`}>
+        ← Back to PG Details
+      </Link>
+
+      <br />
+      <br />
 
       <form onSubmit={handleSubmit}>
         <div>
