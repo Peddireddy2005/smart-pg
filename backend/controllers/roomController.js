@@ -246,9 +246,8 @@ const allocateResident = async (req, res) => {
       });
     }
 
-    if (!room.residents) {
-      room.residents = [];
-    }
+    // IMPORTANT FIX
+    room.residents = room.residents || [];
 
     room.residents.push(resident._id);
 
@@ -257,16 +256,22 @@ const allocateResident = async (req, res) => {
     resident.assignedRoom = room._id;
     resident.assignedPG = room.pg;
 
+    // save room FIRST
     await room.save();
+
+    // then save resident
     await resident.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Resident allocated successfully",
       room,
       resident,
     });
+
   } catch (error) {
-    res.status(500).json({
+    console.log("ALLOCATE ERROR:", error);
+
+    return res.status(500).json({
       message: error.message,
     });
   }
