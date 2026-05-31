@@ -221,11 +221,12 @@ const allocateResident = async (req, res) => {
   }
 };
 
-const removeResident = async (req, res) => {
+const allocateResident = async (req, res) => {
   try {
-    const { residentId } = req.body;
+    const { residentId, roomId } = req.body;
 
     const resident = await User.findById(residentId);
+    const room = await Room.findById(roomId);
 
     if (!resident) {
       return res.status(404).json({
@@ -233,44 +234,37 @@ const removeResident = async (req, res) => {
       });
     }
 
-    if (!resident.assignedRoom) {
-      return res.status(400).json({
-        message: "Resident is not assigned to any room",
-      });
-    }
-
-    const room = await Room.findById(
-      resident.assignedRoom
-    );
-
     if (!room) {
       return res.status(404).json({
         message: "Room not found",
       });
     }
 
-    // SAFE FIX
+    if (resident.assignedRoom) {
+      return res.status(400).json({
+        message: "Resident already allocated",
+      });
+    }
+
     if (!room.residents) {
       room.residents = [];
     }
 
-    room.residents = room.residents.filter(
-      (id) => id.toString() !== residentId
-    );
+    room.residents.push(resident._id);
 
-    room.occupancy -= 1;
+    room.occupancy = room.residents.length;
+
+    resident.assignedRoom = room._id;
+    resident.assignedPG = room.pg;
 
     await room.save();
-
-    resident.assignedRoom = null;
-    resident.assignedPG = null;
-
     await resident.save();
 
     res.status(200).json({
-      message: "Resident removed successfully",
+      message: "Resident allocated successfully",
+      room,
+      resident,
     });
-
   } catch (error) {
     res.status(500).json({
       message: error.message,
