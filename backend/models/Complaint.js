@@ -12,6 +12,7 @@ const complaintSchema = new mongoose.Schema(
     resident: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     pg: { type: mongoose.Schema.Types.ObjectId, ref: "PG", required: true },
     room: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+    ownerNote: { type: String, default: "" },
   },
   { timestamps: true }
 );

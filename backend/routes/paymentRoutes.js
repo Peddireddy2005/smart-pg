@@ -1,9 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {
-  generateMonthlyRents, payRent, getMyPayments,
-  getPGPayments, getOwnerPaymentSummary,
-} = require("../controllers/paymentController");
+const { generateMonthlyRents, payRent, getMyPayments, getPGPayments, getOwnerPaymentSummary } = require("../controllers/paymentController");
 const { protect } = require("../middleware/authMiddleware");
 const { ownerOnly } = require("../middleware/ownerMiddleware");
 

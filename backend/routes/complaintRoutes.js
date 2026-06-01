@@ -1,9 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {
-  createComplaint, getMyComplaints, getPGComplaints,
-  getOwnerComplaints, updateComplaintStatus,
-} = require("../controllers/complaintController");
+const { createComplaint, getMyComplaints, getOwnerComplaints, getPGComplaints, updateComplaintStatus } = require("../controllers/complaintController");
 const { protect } = require("../middleware/authMiddleware");
 const { ownerOnly } = require("../middleware/ownerMiddleware");
 
