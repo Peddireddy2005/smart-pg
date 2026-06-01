@@ -74,4 +74,5 @@ const updateComplaintStatus = async (req, res) => {
   }
 };
 
+
 module.exports = { createComplaint, getMyComplaints, getOwnerComplaints, getPGComplaints, updateComplaintStatus };
