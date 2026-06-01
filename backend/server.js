@@ -1,30 +1,36 @@
-const cors = require("cors");
 const express = require("express");
-require("dotenv").config();
+const dotenv = require("dotenv");
+const cors = require("cors");
+const connectDB = require("./config/db");
 
-require("./config/db");
-
-const authRoutes = require("./routes/authRoutes");
-const pgRoutes = require("./routes/pgRoutes");
-const roomRoutes = require("./routes/roomRoutes");
-const paymentRoutes = require("./routes/paymentRoutes");
-const complaintRoutes = require("./routes/complaintRoutes");
+dotenv.config();
+connectDB();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:5173", "https://smart-pg-lake.vercel.app"],
+  credentials: true,
+}));
+
 app.use(express.json());
 
-app.use("/api/auth", authRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/pgs", pgRoutes);
-app.use("/api/rooms", roomRoutes);
-app.use("/api/complaints", complaintRoutes);
+// Log every incoming request
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`, req.body && Object.keys(req.body).length ? req.body : "");
+  next();
+});
+
+app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/pg", require("./routes/pgRoutes"));
+app.use("/api/rooms", require("./routes/roomRoutes"));
+app.use("/api/payments", require("./routes/paymentRoutes"));
+app.use("/api/complaints", require("./routes/complaintRoutes"));
 
 app.get("/", (req, res) => {
-    res.send("Server Running");
+  console.log("[SERVER] Health check hit");
+  res.send("Server Running");
 });
 
-app.listen(5000, () => {
-    console.log("Server running on port 5000");
-});
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`[SERVER] Running on port ${PORT}`));
