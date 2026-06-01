@@ -1,42 +1,16 @@
 const express = require("express");
-
 const router = express.Router();
-
 const {
-    createPayment,
-    payRent,
-    getMyPayments,
-    getPGPayments
+  generateMonthlyRents, payRent, getMyPayments,
+  getPGPayments, getOwnerPaymentSummary,
 } = require("../controllers/paymentController");
+const { protect } = require("../middleware/authMiddleware");
+const { ownerOnly } = require("../middleware/ownerMiddleware");
 
-const protect = require("../middleware/authMiddleware");
-
-const ownerOnly = require("../middleware/ownerMiddleware");
-
-router.post(
-    "/create",
-    protect,
-    ownerOnly,
-    createPayment
-);
-
-router.post(
-    "/pay/:id",
-    protect,
-    payRent
-);
-
-router.get(
-    "/my-payments",
-    protect,
-    getMyPayments
-);
-
-router.get(
-    "/pg/:pgId",
-    protect,
-    ownerOnly,
-    getPGPayments
-);
+router.post("/generate/:pgId", protect, ownerOnly, generateMonthlyRents);
+router.put("/pay/:id", protect, payRent);
+router.get("/my", protect, getMyPayments);
+router.get("/owner/summary", protect, ownerOnly, getOwnerPaymentSummary);
+router.get("/pg/:pgId", protect, ownerOnly, getPGPayments);
 
 module.exports = router;

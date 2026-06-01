@@ -1,43 +1,15 @@
 const express = require("express");
-
 const router = express.Router();
-
 const {
-    createRoom,
-    getRoomsOfPG,
-    getSingleRoom
+  createRoom, getRoomsByPG, allocateResident, removeResident, getMyRoom,
 } = require("../controllers/roomController");
+const { protect } = require("../middleware/authMiddleware");
+const { ownerOnly } = require("../middleware/ownerMiddleware");
 
-const protect = require("../middleware/authMiddleware");
-
-const ownerOnly = require("../middleware/ownerMiddleware");
-
-const {
-    allocateResident,
-    removeResident
-} = require("../controllers/roomController");
-
-router.post(
-    "/",
-    protect,
-    ownerOnly,
-    createRoom
-);
-
-router.post(
-    "/allocate-room",
-    protect,
-    ownerOnly,
-    allocateResident
-);
-
-router.post(
-  "/remove-resident",
-  protect,
-  ownerOnly,
-  removeResident
-);
-
-router.get("/:id", getSingleRoom);
+router.get("/my", protect, getMyRoom);
+router.post("/:pgId", protect, ownerOnly, createRoom);
+router.get("/:pgId", getRoomsByPG);
+router.post("/:roomId/allocate", protect, ownerOnly, allocateResident);
+router.post("/:roomId/remove", protect, ownerOnly, removeResident);
 
 module.exports = router;

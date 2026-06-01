@@ -1,42 +1,16 @@
 const express = require("express");
-
 const router = express.Router();
-
 const {
-    createComplaint,
-    getMyComplaints,
-    getPGComplaints,
-    updateComplaintStatus
+  createComplaint, getMyComplaints, getPGComplaints,
+  getOwnerComplaints, updateComplaintStatus,
 } = require("../controllers/complaintController");
+const { protect } = require("../middleware/authMiddleware");
+const { ownerOnly } = require("../middleware/ownerMiddleware");
 
-const protect = require("../middleware/authMiddleware");
-
-const ownerOnly = require("../middleware/ownerMiddleware");
-
-router.post(
-    "/",
-    protect,
-    createComplaint
-);
-
-router.get(
-    "/my-complaints",
-    protect,
-    getMyComplaints
-);
-
-router.get(
-    "/pg/:pgId",
-    protect,
-    ownerOnly,
-    getPGComplaints
-);
-
-router.put(
-    "/:id",
-    protect,
-    ownerOnly,
-    updateComplaintStatus
-);
+router.post("/", protect, createComplaint);
+router.get("/my", protect, getMyComplaints);
+router.get("/owner/all", protect, ownerOnly, getOwnerComplaints);
+router.get("/pg/:pgId", protect, ownerOnly, getPGComplaints);
+router.put("/:id/status", protect, ownerOnly, updateComplaintStatus);
 
 module.exports = router;
