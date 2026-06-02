@@ -1,54 +1,31 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [user, setUser] = useState(null);
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  useEffect(() => {
-    const syncUser = () => {
-      const stored = localStorage.getItem("user");
-      setUser(stored ? JSON.parse(stored) : null);
-    };
-
-    syncUser();
-
-    window.addEventListener("storage", syncUser);
-
-    return () => {
-      window.removeEventListener("storage", syncUser);
-    };
-  }, [location.pathname]);
-
-  const dashboardPage =
+  // Hide navbar on dashboards
+  if (
     location.pathname.startsWith("/owner") ||
-    location.pathname.startsWith("/resident");
-
-  if (dashboardPage) {
+    location.pathname.startsWith("/resident")
+  ) {
     return null;
   }
 
   const logout = () => {
     localStorage.removeItem("user");
-
-    window.dispatchEvent(
-      new Event("storage")
-    );
-
     navigate("/");
+    window.location.reload();
   };
 
   return (
-    <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
 
-        <Link
-          to="/"
-          className="flex items-center gap-3"
-        >
-          <div className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center font-bold">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center text-white font-bold">
             S
           </div>
 
@@ -57,11 +34,11 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
 
           <Link
             to="/pgs"
-            className="font-medium text-slate-600 hover:text-brand-500 transition"
+            className="text-slate-600 hover:text-brand-500 font-medium"
           >
             Browse PGs
           </Link>
@@ -70,7 +47,7 @@ export default function Navbar() {
             <>
               <Link
                 to="/login"
-                className="font-medium text-slate-600 hover:text-brand-500 transition"
+                className="text-slate-600 hover:text-brand-500"
               >
                 Login
               </Link>
@@ -79,21 +56,23 @@ export default function Navbar() {
                 to="/signup"
                 className="btn-primary"
               >
-                Get Started
+                Sign Up
               </Link>
             </>
           ) : (
             <>
-              <Link
-                to={
-                  user.role === "owner"
-                    ? "/owner/dashboard"
-                    : "/resident/dashboard"
+              <button
+                onClick={() =>
+                  navigate(
+                    user.role === "owner"
+                      ? "/owner/dashboard"
+                      : "/resident/dashboard"
+                  )
                 }
                 className="btn-primary"
               >
                 Dashboard
-              </Link>
+              </button>
 
               <button
                 onClick={logout}
@@ -104,7 +83,6 @@ export default function Navbar() {
             </>
           )}
         </div>
-
       </div>
     </nav>
   );
