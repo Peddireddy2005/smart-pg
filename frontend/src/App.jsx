@@ -24,17 +24,21 @@ import Navbar from "./components/Navbar";
 const Guard = ({ role, children }) => {
   const stored = localStorage.getItem("user");
 
+  console.log("GUARD STORED:", stored);
+
   if (!stored) {
+    console.log("NO USER");
     return <Navigate to="/login" replace />;
   }
 
   const user = JSON.parse(stored);
 
-  if (!user?.token) {
-    return <Navigate to="/login" replace />;
-  }
+  console.log("GUARD USER:", user);
+  console.log("ROLE REQUIRED:", role);
+  console.log("USER ROLE:", user?.role);
 
   if (role && user.role !== role) {
+    console.log("ROLE MISMATCH");
     return <Navigate to="/" replace />;
   }
 
