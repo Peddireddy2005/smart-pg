@@ -91,6 +91,13 @@ const login = async (req, res) => {
   }
 };
 
+const { data } = await api.post("/auth/login", form);
+
+console.log("LOGIN DATA:");
+console.log(data);
+
+localStorage.setItem("user", JSON.stringify(data));
+
 const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
