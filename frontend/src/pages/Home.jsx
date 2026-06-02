@@ -8,26 +8,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#f8f7f4] font-body">
-      {/* Navbar */}
-      <nav className="px-6 md:px-12 py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">S</div>
-          <span className="font-heading font-bold text-xl text-slate-900">Smart PG</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link to="/pgs" className="text-sm text-slate-600 hover:text-slate-900 font-medium transition">Browse PGs</Link>
-          {user ? (
-            <Link to={user.role === "owner" ? "/owner/dashboard" : "/resident/dashboard"}
-              className="btn-primary text-sm">Dashboard</Link>
-          ) : (
-            <>
-              <Link to="/login" className="btn-secondary text-sm">Login</Link>
-              <Link to="/signup" className="btn-primary text-sm">Get Started</Link>
-            </>
-          )}
-        </div>
-      </nav>
-
       {/* Hero */}
       <section className="relative overflow-hidden bg-slate-950 text-white">
         <div className="absolute inset-0 opacity-20"
