@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": { target: "https://smart-pg-backend-9l7f.onrender.com/", changeOrigin: true },
+      "/api": { target: "https://smart-pg-backend-9l7f.onrender.com", changeOrigin: true },
     },
   },
 });

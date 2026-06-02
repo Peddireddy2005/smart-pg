@@ -1,11 +1,16 @@
+/** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,jsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,jsx}",
+  ],
   theme: {
     extend: {
       fontFamily: {
-        heading: ["'Outfit'", "sans-serif"],
-        body: ["'DM Sans'", "sans-serif"],
+        heading: ["Outfit", "sans-serif"],
+        body: ["DM Sans", "sans-serif"],
       },
+
       colors: {
         brand: {
           50: "#fff8ed",
@@ -18,11 +23,6 @@ export default {
           700: "#c74307",
           800: "#9e350e",
           900: "#7f2d0f",
-        },
-        slate: {
-          750: "#293548",
-          850: "#1a2537",
-          950: "#0f172a",
         },
       },
     },
