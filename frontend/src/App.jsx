@@ -19,18 +19,32 @@ import ResidentPayments from "./pages/resident/ResidentPayments";
 import ResidentComplaints from "./pages/resident/ResidentComplaints";
 import MyProfile from "./pages/resident/MyProfile";
 import AllocateResident from "./pages/owner/AllocateResident";
+import Navbar from "./components/Navbar";
 
 const Guard = ({ role, children }) => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  console.log("[GUARD] Role required:", role, "| User:", user?.role || "none");
-  if (!user) return <Navigate to="/login" replace />;
-  if (role && user.role !== role) return <Navigate to="/" replace />;
+  const stored = localStorage.getItem("user");
+
+  if (!stored) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const user = JSON.parse(stored);
+
+  if (!user?.token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role && user.role !== role) {
+    return <Navigate to="/" replace />;
+  }
+
   return children;
 };
 
 export default function App() {
   return (
     <BrowserRouter>
+      <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />

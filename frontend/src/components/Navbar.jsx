@@ -2,51 +2,109 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 export default function Navbar() {
-  const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [user, setUser] = useState(null);
+
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    const parsed = stored ? JSON.parse(stored) : null;
-    console.log("[NAVBAR] Location changed to:", location.pathname, "| User:", parsed?.email || "none");
-    setUser(parsed);
-  }, [location]);
+    const syncUser = () => {
+      const stored = localStorage.getItem("user");
+      setUser(stored ? JSON.parse(stored) : null);
+    };
+
+    syncUser();
+
+    window.addEventListener("storage", syncUser);
+
+    return () => {
+      window.removeEventListener("storage", syncUser);
+    };
+  }, [location.pathname]);
+
+  const dashboardPage =
+    location.pathname.startsWith("/owner") ||
+    location.pathname.startsWith("/resident");
+
+  if (dashboardPage) {
+    return null;
+  }
 
   const logout = () => {
-    console.log("[NAVBAR] Logout clicked by:", user?.email);
     localStorage.removeItem("user");
-    setUser(null);
-    navigate("/login");
-    console.log("[NAVBAR] User logged out, redirecting to /login");
+
+    window.dispatchEvent(
+      new Event("storage")
+    );
+
+    navigate("/");
   };
 
   return (
-    <nav className="bg-blue-700 text-white px-6 py-3 flex justify-between items-center sticky top-0 z-50 shadow-md">
-      <Link to="/" className="text-xl font-bold tracking-tight" onClick={() => console.log("[NAVBAR] Logo clicked")}>Smart PG</Link>
-      <div className="flex gap-4 items-center text-sm font-medium">
-        <Link to="/pgs" onClick={() => console.log("[NAVBAR] Browse PGs clicked")}>Browse PGs</Link>
-        {!user ? (
-          <>
-            <Link to="/login" onClick={() => console.log("[NAVBAR] Login button clicked")} className="bg-white text-blue-700 px-4 py-1.5 rounded-lg">Login</Link>
-            <Link to="/signup" onClick={() => console.log("[NAVBAR] Signup button clicked")} className="border border-white px-4 py-1.5 rounded-lg">Signup</Link>
-          </>
-        ) : user.role === "owner" ? (
-          <>
-            <Link to="/owner/dashboard" onClick={() => console.log("[NAVBAR] Owner Dashboard clicked")}>Dashboard</Link>
-            <Link to="/owner/payments" onClick={() => console.log("[NAVBAR] Owner Payments clicked")}>Payments</Link>
-            <Link to="/owner/complaints" onClick={() => console.log("[NAVBAR] Owner Complaints clicked")}>Complaints</Link>
-            <button onClick={logout} className="bg-white text-blue-700 px-4 py-1.5 rounded-lg">Logout</button>
-          </>
-        ) : (
-          <>
-            <Link to="/resident/dashboard" onClick={() => console.log("[NAVBAR] Resident Dashboard clicked")}>Dashboard</Link>
-            <Link to="/resident/room" onClick={() => console.log("[NAVBAR] My Room clicked")}>My Room</Link>
-            <Link to="/resident/payments" onClick={() => console.log("[NAVBAR] Rent clicked")}>Rent</Link>
-            <Link to="/resident/complaints" onClick={() => console.log("[NAVBAR] Complaints clicked")}>Complaints</Link>
-            <button onClick={logout} className="bg-white text-blue-700 px-4 py-1.5 rounded-lg">Logout</button>
-          </>
-        )}
+    <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+
+        <Link
+          to="/"
+          className="flex items-center gap-3"
+        >
+          <div className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center font-bold">
+            S
+          </div>
+
+          <span className="font-heading text-2xl font-bold text-slate-900">
+            Smart PG
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-6">
+
+          <Link
+            to="/pgs"
+            className="font-medium text-slate-600 hover:text-brand-500 transition"
+          >
+            Browse PGs
+          </Link>
+
+          {!user ? (
+            <>
+              <Link
+                to="/login"
+                className="font-medium text-slate-600 hover:text-brand-500 transition"
+              >
+                Login
+              </Link>
+
+              <Link
+                to="/signup"
+                className="btn-primary"
+              >
+                Get Started
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                to={
+                  user.role === "owner"
+                    ? "/owner/dashboard"
+                    : "/resident/dashboard"
+                }
+                className="btn-primary"
+              >
+                Dashboard
+              </Link>
+
+              <button
+                onClick={logout}
+                className="btn-secondary"
+              >
+                Logout
+              </button>
+            </>
+          )}
+        </div>
+
       </div>
     </nav>
   );

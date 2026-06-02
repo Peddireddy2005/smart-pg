@@ -13,7 +13,14 @@ export default function Signup() {
     setError(""); setLoading(true);
     try {
       const { data } = await api.post("/auth/signup", form);
-      localStorage.setItem("user", JSON.stringify(data));
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data)
+      );
+
+      window.dispatchEvent(
+        new Event("storage")
+      );
       navigate(data.role === "owner" ? "/owner/dashboard" : "/resident/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Signup failed");
