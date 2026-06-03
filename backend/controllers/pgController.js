@@ -30,8 +30,8 @@ const getAllPGs = async (req, res) => {
     const pgs = await PG.find(filter).populate("owner", "name email phone");
     const pgData = await Promise.all(pgs.map(async (pg) => {
       const rooms = await Room.find({ pg: pg._id });
-      const availableRooms = rooms.filter((r) => r.occupancy < r.capacity).length;
-      return { ...pg.toObject(), totalRooms: rooms.length, availableRooms };
+      const vacantBeds =rooms.reduce((sum, room) =>sum +(room.capacity -room.occupancy),0);
+      return {...pg.toObject(),totalRooms: rooms.length,vacantBeds,};
     }));
 
     console.log("[GET ALL PGs] Returning:", pgData.length);
@@ -44,18 +44,47 @@ const getAllPGs = async (req, res) => {
 
 const getOwnerPGs = async (req, res) => {
   try {
-    const pgs = await PG.find({ owner: req.user._id });
-    const pgData = await Promise.all(pgs.map(async (pg) => {
-      const rooms = await Room.find({ pg: pg._id });
-      const totalResidents = rooms.reduce((sum, r) => sum + r.occupancy, 0);
-      const availableRooms = rooms.filter((r) => r.occupancy < r.capacity).length;
-      return { ...pg.toObject(), totalRooms: rooms.length, totalResidents, availableRooms };
-    }));
-    console.log("[OWNER PGs]", req.user.email, "has", pgData.length, "PGs");
+    const pgs = await PG.find({
+      owner: req.user._id,
+    });
+
+    const pgData = await Promise.all(
+      pgs.map(async (pg) => {
+        const rooms = await Room.find({
+          pg: pg._id,
+        });
+
+        const totalResidents =
+          rooms.reduce(
+            (sum, room) =>
+              sum + room.occupancy,
+            0
+          );
+
+        const vacantBeds =
+          rooms.reduce(
+            (sum, room) =>
+              sum +
+              (room.capacity -
+                room.occupancy),
+            0
+          );
+
+        return {
+          ...pg.toObject(),
+          totalRooms: rooms.length,
+          totalResidents,
+          vacantBeds,
+        };
+      })
+    );
+
     res.json(pgData);
   } catch (err) {
-    console.error("[OWNER PGs] Error:", err.message);
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 

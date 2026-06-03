@@ -154,4 +154,50 @@ const getResidentProfile = async (req, res) => {
   }
 };
 
-module.exports = { createRoom, getRoomsByPG, allocateResident, removeResident, getMyRoom, getResidentProfile };
+const deleteRoom = async (
+  req,
+  res
+) => {
+  try {
+    const room =
+      await Room.findById(
+        req.params.roomId
+      );
+
+    if (!room) {
+      return res
+        .status(404)
+        .json({
+          message:
+            "Room not found",
+        });
+    }
+
+    if (
+      room.occupancy > 0
+    ) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "Remove residents first",
+        });
+    }
+
+    await room.deleteOne();
+
+    res.json({
+      message:
+        "Room deleted",
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({
+        message:
+          err.message,
+      });
+  }
+};
+
+module.exports = { createRoom, getRoomsByPG, allocateResident, removeResident, getMyRoom, getResidentProfile, deleteRoom };

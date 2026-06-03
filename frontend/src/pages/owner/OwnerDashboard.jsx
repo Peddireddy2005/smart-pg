@@ -37,6 +37,25 @@ export default function OwnerDashboard() {
     fetchDashboard();
   }, [user?.email]);
 
+  const deletePG = async (e, pgId) => {
+    e.preventDefault();
+
+    if (!window.confirm("Delete this PG?")) return;
+
+    try {
+      await api.delete(`/pg/${pgId}`);
+
+      setPGs((prev) =>
+        prev.filter((p) => p._id !== pgId)
+      );
+    } catch (err) {
+      alert(
+        err.response?.data?.message ||
+          "Failed to delete PG"
+      );
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -135,9 +154,11 @@ export default function OwnerDashboard() {
       ) : pgs.length === 0 ? (
         <div className="card p-12 text-center text-slate-400">
           <p className="text-5xl mb-4">🏘️</p>
+
           <p className="font-heading font-semibold text-slate-600 text-lg">
             No PGs yet
           </p>
+
           <p className="text-sm mt-1 mb-6">
             Start by adding your first PG listing
           </p>
@@ -164,12 +185,12 @@ export default function OwnerDashboard() {
 
                 <span
                   className={
-                    pg.availableRooms > 0
+                    pg.vacantBeds > 0
                       ? "badge-green"
                       : "badge-red"
                   }
                 >
-                  {pg.availableRooms} vacant
+                  {pg.vacantBeds} beds vacant
                 </span>
               </div>
 
@@ -177,7 +198,7 @@ export default function OwnerDashboard() {
                 📍 {pg.city}
               </p>
 
-              <div className="flex gap-4 text-sm text-slate-500">
+              <div className="flex gap-4 text-sm text-slate-500 mb-4">
                 <span>
                   🚪 {pg.totalRooms} rooms
                 </span>
@@ -185,6 +206,21 @@ export default function OwnerDashboard() {
                 <span>
                   👥 {pg.totalResidents} residents
                 </span>
+              </div>
+
+              <div className="flex gap-2">
+                <span className="btn-secondary text-sm">
+                  View
+                </span>
+
+                <button
+                  onClick={(e) =>
+                    deletePG(e, pg._id)
+                  }
+                  className="btn-danger text-sm"
+                >
+                  Delete
+                </button>
               </div>
             </Link>
           ))}

@@ -10,5 +10,6 @@ router.get("/:pgId", getRoomsByPG);
 router.post("/:roomId/allocate", protect, ownerOnly, allocateResident);
 router.post("/:roomId/remove", protect, ownerOnly, removeResident);
 router.get("/resident/:residentId/profile", protect, ownerOnly, getResidentProfile);
+router.delete("/:roomId", protect, ownerOnly, deleteRoom);
 
 module.exports = router;
