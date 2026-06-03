@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createRoom, getRoomsByPG, allocateResident, removeResident, getMyRoom, getResidentProfile } = require("../controllers/roomController");
+const { createRoom, getRoomsByPG, allocateResident, removeResident, getMyRoom, getResidentProfile,deleteRoom } = require("../controllers/roomController");
 const { protect } = require("../middleware/authMiddleware");
 const { ownerOnly } = require("../middleware/ownerMiddleware");
 
