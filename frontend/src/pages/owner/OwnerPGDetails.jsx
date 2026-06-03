@@ -12,24 +12,21 @@ export default function OwnerPGDetails() {
   const loadRooms = useCallback(async () => {
     try {
       const { data } = await api.get(`/rooms/${id}`);
-      console.log("[PG DETAILS] Rooms:", data.length);
       setRooms(data);
     } catch (err) {
-      console.error("Failed to load rooms:", err);
+      console.error(err);
     }
   }, [id]);
 
   useEffect(() => {
     const fetchPG = async () => {
       try {
-        console.log("[PG DETAILS] Loading:", id);
-
         const { data } = await api.get(`/pg/${id}`);
         setPG(data);
 
         await loadRooms();
       } catch (err) {
-        console.error("Failed to load PG:", err);
+        console.error(err);
       }
     };
 
@@ -66,6 +63,16 @@ export default function OwnerPGDetails() {
     (sum, room) => sum + room.occupancy,
     0
   );
+
+  const vacantBeds = rooms.reduce(
+    (sum, room) =>
+      sum + (room.capacity - room.occupancy),
+    0
+  );
+
+  const fullRooms = rooms.filter(
+    (room) => room.occupancy >= room.capacity
+  ).length;
 
   return (
     <div>
@@ -112,7 +119,9 @@ export default function OwnerPGDetails() {
           <p className="text-2xl font-bold text-blue-600">
             {rooms.length}
           </p>
-          <p className="text-xs text-slate-500">Rooms</p>
+          <p className="text-xs text-slate-500">
+            Rooms
+          </p>
         </div>
 
         <div className="card p-4 text-center">
@@ -126,24 +135,16 @@ export default function OwnerPGDetails() {
 
         <div className="card p-4 text-center">
           <p className="text-2xl font-bold text-amber-600">
-            {
-              rooms.filter(
-                (r) => r.occupancy < r.capacity
-              ).length
-            }
+            {vacantBeds}
           </p>
           <p className="text-xs text-slate-500">
-            Vacant
+            Vacant Beds
           </p>
         </div>
 
         <div className="card p-4 text-center">
           <p className="text-2xl font-bold text-red-500">
-            {
-              rooms.filter(
-                (r) => r.occupancy >= r.capacity
-              ).length
-            }
+            {fullRooms}
           </p>
           <p className="text-xs text-slate-500">
             Full Rooms
@@ -195,11 +196,9 @@ export default function OwnerPGDetails() {
         />
       )}
 
-      {tab === "payments" && <PaymentsTab pgId={id} />}
+      {tab === "payments" && <PaymentsTab />}
 
-      {tab === "complaints" && (
-        <ComplaintsTab pgId={id} />
-      )}
+      {tab === "complaints" && <ComplaintsTab />}
     </div>
   );
 }
@@ -231,9 +230,15 @@ function RoomsTab({ rooms, pgId, removeResident }) {
               Room {room.roomNumber}
             </h3>
 
-            <span>
-              {room.occupancy}/{room.capacity}
-            </span>
+            <div className="text-right">
+              <p className="font-medium">
+                {room.occupancy}/{room.capacity}
+              </p>
+
+              <p className="text-xs text-green-600">
+                {room.capacity - room.occupancy} vacant
+              </p>
+            </div>
           </div>
 
           <p className="text-brand-500 font-semibold mb-3">
@@ -247,14 +252,18 @@ function RoomsTab({ rooms, pgId, removeResident }) {
                   key={resident._id}
                   className="flex justify-between items-center bg-slate-50 rounded-xl px-3 py-2"
                 >
-                  <div>
-                    <p className="font-medium">
+                  <Link
+                    to={`/owner/resident/${resident._id}`}
+                    className="flex-1"
+                  >
+                    <p className="font-medium hover:text-orange-500 transition">
                       {resident.name}
                     </p>
+
                     <p className="text-xs text-slate-400">
                       {resident.email}
                     </p>
-                  </div>
+                  </Link>
 
                   <button
                     onClick={() =>
