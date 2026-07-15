@@ -1,203 +1,171 @@
 const Room = require("../models/Room");
 const PG = require("../models/PG");
 const User = require("../models/User");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
+const logger = require("../config/logger");
+const { notify } = require("../utils/notify");
 
-const createRoom = async (req, res) => {
+const recalcRentRange = async (pgId) => {
+  const allRooms = await Room.find({ pg: pgId });
+  if (allRooms.length === 0) return;
+  const rents = allRooms.map((r) => r.rent);
+  await PG.findByIdAndUpdate(pgId, { rentRange: { min: Math.min(...rents), max: Math.max(...rents) } });
+};
+
+const createRoom = asyncHandler(async (req, res) => {
   const { pgId } = req.params;
-  console.log("[CREATE ROOM] PG:", pgId, "Data:", req.body);
-  try {
-    const pg = await PG.findById(pgId);
-    if (!pg) return res.status(404).json({ message: "PG not found" });
-    if (pg.owner.toString() !== req.user._id.toString())
-      return res.status(403).json({ message: "Not authorized" });
+  const pg = await PG.findById(pgId);
+  if (!pg) throw new AppError("PG not found", 404);
+  if (pg.owner.toString() !== req.user._id.toString()) throw new AppError("Not authorized", 403);
 
-    const room = await Room.create({ ...req.body, pg: pgId, occupancy: 0 });
-    console.log("[CREATE ROOM] Created:", room.roomNumber);
+  const room = await Room.create({ ...req.body, pg: pgId, occupancy: 0 });
+  logger.info(`[CREATE ROOM] ${room.roomNumber}`);
 
-    // Update rent range
-    const allRooms = await Room.find({ pg: pgId });
-    const rents = allRooms.map((r) => r.rent);
-    await PG.findByIdAndUpdate(pgId, { rentRange: { min: Math.min(...rents), max: Math.max(...rents) } });
+  await recalcRentRange(pgId);
+  res.status(201).json(room);
+});
 
-    res.status(201).json(room);
-  } catch (err) {
-    console.error("[CREATE ROOM] Error:", err.message);
-    res.status(500).json({ message: err.message });
+const updateRoom = asyncHandler(async (req, res) => {
+  const room = await Room.findById(req.params.roomId).populate("pg");
+  if (!room) throw new AppError("Room not found", 404);
+  if (room.pg.owner.toString() !== req.user._id.toString()) throw new AppError("Not authorized", 403);
+
+  const { roomNumber, capacity, rent, floor, type } = req.body;
+  if (capacity !== undefined && Number(capacity) < room.occupancy) {
+    throw new AppError(`Capacity can't be less than current occupancy (${room.occupancy})`, 400);
   }
-};
 
-const getRoomsByPG = async (req, res) => {
-  try {
-    const rooms = await Room.find({ pg: req.params.pgId })
-      .populate("residents", "name email phone photoUrl isVerified invitedByOwner");
-    console.log("[GET ROOMS] PG:", req.params.pgId, "Count:", rooms.length);
-    res.json(rooms);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+  Object.assign(room, {
+    ...(roomNumber !== undefined && { roomNumber }),
+    ...(capacity !== undefined && { capacity }),
+    ...(rent !== undefined && { rent }),
+    ...(floor !== undefined && { floor }),
+    ...(type !== undefined && { type }),
+  });
+  await room.save();
+  await recalcRentRange(room.pg._id);
+
+  logger.info(`[UPDATE ROOM] ${room.roomNumber}`);
+  res.json(room);
+});
+
+const getRoomsByPG = asyncHandler(async (req, res) => {
+  const rooms = await Room.find({ pg: req.params.pgId })
+    .populate("residents", "name email phone photoUrl isVerified invitedByOwner");
+  res.json(rooms);
+});
 
 // Allocate by email — supports unregistered residents
-const allocateResident = async (req, res) => {
+const allocateResident = asyncHandler(async (req, res) => {
   const { residentEmail, residentName } = req.body;
-  console.log("[ALLOCATE] Room:", req.params.roomId, "Email:", residentEmail);
-  try {
-    let resident = await User.findOne({ email: residentEmail.toLowerCase() });
+  let resident = await User.findOne({ email: residentEmail.toLowerCase() });
 
-    if (!resident) {
-      // Create a placeholder account for unregistered resident
-      if (!residentName) return res.status(400).json({ message: "Resident not found. Please provide their name to add them as a guest." });
-      console.log("[ALLOCATE] Creating guest account for:", residentEmail);
-      resident = await User.create({
-        name: residentName,
-        email: residentEmail.toLowerCase(),
-        password: "",
-        role: "resident",
-        isVerified: false,
-        invitedByOwner: true,
-      });
-      console.log("[ALLOCATE] Guest account created:", resident._id);
-    } else if (resident.role !== "resident") {
-      return res.status(400).json({ message: "This email belongs to an owner account" });
+  if (!resident) {
+    if (!residentName) {
+      throw new AppError("Resident not found. Please provide their name to add them as a guest.", 400);
     }
-
-    if (resident.assignedRoom)
-      return res.status(400).json({ message: "Resident is already assigned to a room" });
-
-    const room = await Room.findById(req.params.roomId).populate("pg");
-    if (!room) return res.status(404).json({ message: "Room not found" });
-    if (room.occupancy >= room.capacity)
-      return res.status(400).json({ message: "Room is full" });
-
-    room.residents.push(resident._id);
-    room.occupancy += 1;
-    await room.save();
-
-    await User.findByIdAndUpdate(resident._id, {
-      assignedPG: room.pg._id,
-      assignedRoom: room._id,
+    resident = await User.create({
+      name: residentName,
+      email: residentEmail.toLowerCase(),
+      password: "",
+      role: "resident",
+      isVerified: false,
+      invitedByOwner: true,
     });
-
-    console.log("[ALLOCATE] Done. Room:", room.roomNumber, "Resident:", resident.email);
-    const populated = await Room.findById(room._id)
-      .populate("residents", "name email phone photoUrl isVerified invitedByOwner");
-    res.json(populated);
-  } catch (err) {
-    console.error("[ALLOCATE] Error:", err.message);
-    res.status(500).json({ message: err.message });
+    logger.info(`[ALLOCATE] Guest account created: ${resident._id}`);
+  } else if (resident.role !== "resident") {
+    throw new AppError("This email belongs to an owner account", 400);
   }
-};
 
-const removeResident = async (req, res) => {
+  if (resident.assignedRoom) throw new AppError("Resident is already assigned to a room", 400);
+
+  const room = await Room.findById(req.params.roomId).populate("pg");
+  if (!room) throw new AppError("Room not found", 404);
+  if (room.occupancy >= room.capacity) throw new AppError("Room is full", 400);
+
+  room.residents.push(resident._id);
+  room.occupancy += 1;
+  await room.save();
+
+  await User.findByIdAndUpdate(resident._id, {
+    assignedPG: room.pg._id,
+    assignedRoom: room._id,
+  });
+
+  await notify({
+    user: resident._id,
+    title: "Room Assigned",
+    message: `You've been assigned to Room ${room.roomNumber} at ${room.pg.name}.`,
+    type: "allocation",
+    link: "/resident/room",
+  });
+
+  logger.info(`[ALLOCATE] Done. Room: ${room.roomNumber} Resident: ${resident.email}`);
+  const populated = await Room.findById(room._id)
+    .populate("residents", "name email phone photoUrl isVerified invitedByOwner");
+  res.json(populated);
+});
+
+const removeResident = asyncHandler(async (req, res) => {
   const { residentId } = req.body;
-  console.log("[REMOVE RESIDENT] Room:", req.params.roomId, "Resident:", residentId);
-  try {
-    const room = await Room.findById(req.params.roomId);
-    if (!room) return res.status(404).json({ message: "Room not found" });
+  const room = await Room.findById(req.params.roomId);
+  if (!room) throw new AppError("Room not found", 404);
 
-    room.residents = room.residents.filter((r) => r.toString() !== residentId);
-    room.occupancy = Math.max(0, room.occupancy - 1);
-    await room.save();
+  room.residents = room.residents.filter((r) => r.toString() !== residentId);
+  room.occupancy = Math.max(0, room.occupancy - 1);
+  await room.save();
 
-    await User.findByIdAndUpdate(residentId, { assignedPG: null, assignedRoom: null });
-    console.log("[REMOVE RESIDENT] Done");
+  await User.findByIdAndUpdate(residentId, { assignedPG: null, assignedRoom: null });
 
-    const populated = await Room.findById(room._id)
-      .populate("residents", "name email phone photoUrl isVerified invitedByOwner");
-    res.json(populated);
-  } catch (err) {
-    console.error("[REMOVE RESIDENT] Error:", err.message);
-    res.status(500).json({ message: err.message });
-  }
-};
+  const populated = await Room.findById(room._id)
+    .populate("residents", "name email phone photoUrl isVerified invitedByOwner");
+  res.json(populated);
+});
 
-const getMyRoom = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user.assignedRoom) return res.status(404).json({ message: "No room assigned" });
+const getMyRoom = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user.assignedRoom) throw new AppError("No room assigned", 404);
 
-    const room = await Room.findById(user.assignedRoom)
-      .populate("residents", "name email phone photoUrl isVerified")
-      .populate("pg", "name address city amenities contactPhone rules");
+  const room = await Room.findById(user.assignedRoom)
+    .populate("residents", "name email phone photoUrl isVerified")
+    .populate("pg", "name address city amenities contactPhone rules");
 
-    console.log("[MY ROOM]", req.user.email, "Room:", room?.roomNumber);
-    res.json(room);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+  res.json(room);
+});
 
 // Owner view: get full resident profile
-const getResidentProfile = async (req, res) => {
-  console.log("[RESIDENT PROFILE] Owner:", req.user.email, "Resident:", req.params.residentId);
-  try {
-    const resident = await User.findById(req.params.residentId)
-      .select("-password")
-      .populate("assignedPG", "name city")
-      .populate("assignedRoom", "roomNumber");
+const getResidentProfile = asyncHandler(async (req, res) => {
+  const resident = await User.findById(req.params.residentId)
+    .select("-password")
+    .populate("assignedPG", "name city")
+    .populate("assignedRoom", "roomNumber");
 
-    if (!resident) return res.status(404).json({ message: "Resident not found" });
-    if (resident.role !== "resident") return res.status(400).json({ message: "Not a resident" });
+  if (!resident) throw new AppError("Resident not found", 404);
+  if (resident.role !== "resident") throw new AppError("Not a resident", 400);
 
-    // Verify the resident belongs to one of the owner's PGs
-    const PG = require("../models/PG");
-    const ownerPGs = await PG.find({ owner: req.user._id });
-    const ownerPGIds = ownerPGs.map((p) => p._id.toString());
-    if (resident.assignedPG && !ownerPGIds.includes(resident.assignedPG._id?.toString())) {
-      return res.status(403).json({ message: "This resident is not in your PG" });
-    }
-
-    res.json(resident);
-  } catch (err) {
-    console.error("[RESIDENT PROFILE] Error:", err.message);
-    res.status(500).json({ message: err.message });
+  const ownerPGs = await PG.find({ owner: req.user._id });
+  const ownerPGIds = ownerPGs.map((p) => p._id.toString());
+  if (resident.assignedPG && !ownerPGIds.includes(resident.assignedPG._id?.toString())) {
+    throw new AppError("This resident is not in your PG", 403);
   }
+
+  res.json(resident);
+});
+
+const deleteRoom = asyncHandler(async (req, res) => {
+  const room = await Room.findById(req.params.roomId);
+  if (!room) throw new AppError("Room not found", 404);
+  if (room.occupancy > 0) throw new AppError("Remove residents first", 400);
+
+  const pgId = room.pg;
+  await room.deleteOne();
+  await recalcRentRange(pgId);
+
+  res.json({ message: "Room deleted" });
+});
+
+module.exports = {
+  createRoom, updateRoom, getRoomsByPG, allocateResident, removeResident,
+  getMyRoom, getResidentProfile, deleteRoom,
 };
-
-const deleteRoom = async (
-  req,
-  res
-) => {
-  try {
-    const room =
-      await Room.findById(
-        req.params.roomId
-      );
-
-    if (!room) {
-      return res
-        .status(404)
-        .json({
-          message:
-            "Room not found",
-        });
-    }
-
-    if (
-      room.occupancy > 0
-    ) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Remove residents first",
-        });
-    }
-
-    await room.deleteOne();
-
-    res.json({
-      message:
-        "Room deleted",
-    });
-  } catch (err) {
-    res
-      .status(500)
-      .json({
-        message:
-          err.message,
-      });
-  }
-};
-
-module.exports = { createRoom, getRoomsByPG, allocateResident, removeResident, getMyRoom, getResidentProfile, deleteRoom };

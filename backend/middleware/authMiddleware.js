@@ -1,9 +1,9 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const logger = require("../config/logger");
 
 const protect = async (req, res, next) => {
   let token;
-  console.log(`[AUTH] ${req.method} ${req.url}`);
 
   if (req.headers.authorization?.startsWith("Bearer")) {
     try {
@@ -12,19 +12,33 @@ const protect = async (req, res, next) => {
       req.user = await User.findById(decoded.id).select("-password");
 
       if (!req.user) {
-        console.warn("[AUTH] Token valid but user not found:", decoded.id);
+        logger.warn(`[AUTH] Token valid but user not found: ${decoded.id}`);
         return res.status(401).json({ message: "User not found" });
       }
-      console.log("[AUTH] Authenticated:", req.user.email, "| Role:", req.user.role);
       next();
     } catch (err) {
-      console.error("[AUTH] Token error:", err.message);
+      logger.warn(`[AUTH] Token error: ${err.message}`);
       return res.status(401).json({ message: "Not authorized, token failed" });
     }
   } else {
-    console.warn("[AUTH] No token provided for:", req.url);
     return res.status(401).json({ message: "No token provided" });
   }
 };
 
-module.exports = { protect };
+// Optional auth — attaches req.user if a valid token is present, but doesn't
+// block the request if it's missing/invalid. Useful for public endpoints
+// that personalize output when logged in (e.g. PG listing "is this mine?").
+const optionalAuth = async (req, res, next) => {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer")) return next();
+  try {
+    const token = header.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select("-password");
+  } catch {
+    // ignore invalid token for optional auth
+  }
+  next();
+};
+
+module.exports = { protect, optionalAuth };

@@ -1,9 +1,12 @@
+const crypto = require("crypto");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-
-const generateToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+const generateToken = require("../utils/generateToken");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
+const { sendEmail, templates } = require("../utils/sendEmail");
+const { verifyGoogleToken, isConfigured: googleConfigured } = require("../config/googleOAuth");
+const logger = require("../config/logger");
 
 const formatUser = (user) => ({
   _id: user._id,
@@ -23,110 +26,209 @@ const formatUser = (user) => ({
   token: generateToken(user._id),
 });
 
-const signup = async (req, res) => {
+const signup = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
-  console.log("[SIGNUP] Attempt:", email, role);
-  try {
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "Name, email and password are required" });
-    }
+  logger.info(`[SIGNUP] Attempt: ${email} ${role}`);
 
-    const exists = await User.findOne({ email: email.toLowerCase() });
-    if (exists) {
-      // If this email was pre-created by an owner invite, activate the account
-      if (exists.invitedByOwner && !exists.password) {
-        const hashed = await bcrypt.hash(password, 10);
-        exists.name = name;
-        exists.password = hashed;
-        exists.role = "resident";
-        exists.isVerified = true;
-        await exists.save();
-        console.log("[SIGNUP] Invited resident account activated:", email);
-        const populated = await User.findById(exists._id)
-          .populate("assignedPG", "name address city")
-          .populate("assignedRoom", "roomNumber rent");
-        return res.status(201).json(formatUser(populated));
-      }
-      console.warn("[SIGNUP] Email already exists:", email);
-      return res.status(400).json({ message: "User already exists" });
+  const exists = await User.findOne({ email: email.toLowerCase() });
+  if (exists) {
+    // If this email was pre-created by an owner invite, activate the account
+    if (exists.invitedByOwner && !exists.password) {
+      const hashed = await bcrypt.hash(password, 10);
+      exists.name = name;
+      exists.password = hashed;
+      exists.role = "resident";
+      exists.isVerified = true;
+      await exists.save();
+      logger.info(`[SIGNUP] Invited resident account activated: ${email}`);
+      const populated = await User.findById(exists._id)
+        .populate("assignedPG", "name address city")
+        .populate("assignedRoom", "roomNumber rent");
+      return res.status(201).json(formatUser(populated));
     }
-
-    const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email: email.toLowerCase(), password: hashed, role, isVerified: true });
-    console.log("[SIGNUP] User created:", user._id, email);
-    res.status(201).json(formatUser(user));
-  } catch (err) {
-    console.error("[SIGNUP] Error:", err.message);
-    res.status(500).json({ message: err.message });
+    throw new AppError("User already exists", 400);
   }
-};
 
-const login = async (req, res) => {
+  const hashed = await bcrypt.hash(password, 10);
+  const user = await User.create({
+    name,
+    email: email.toLowerCase(),
+    password: hashed,
+    role,
+    isVerified: true,
+  });
+  logger.info(`[SIGNUP] User created: ${user._id} ${email}`);
+
+  sendEmail({ to: user.email, subject: "Welcome to Smart PG", html: templates.welcome(user.name) });
+
+  res.status(201).json(formatUser(user));
+});
+
+const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  console.log("[LOGIN] Attempt:", email);
-  try {
-    const user = await User.findOne({ email: email.toLowerCase() })
-      .populate("assignedPG", "name address city")
-      .populate("assignedRoom", "roomNumber rent capacity occupancy");
+  logger.info(`[LOGIN] Attempt: ${email}`);
 
-    if (!user) {
-      console.warn("[LOGIN] Not found:", email);
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-    if (!user.password) {
-      return res.status(400).json({ message: "Please sign up first to set your password" });
-    }
+  const user = await User.findOne({ email: email.toLowerCase() })
+    .populate("assignedPG", "name address city")
+    .populate("assignedRoom", "roomNumber rent capacity occupancy");
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      console.warn("[LOGIN] Wrong password:", email);
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+  if (!user) throw new AppError("Invalid credentials", 400);
+  if (!user.isActive) throw new AppError("This account has been deactivated", 403);
+  if (!user.password) throw new AppError("Please sign up first to set your password", 400);
 
-    console.log("[LOGIN] Success:", email, user.role);
-    res.json(formatUser(user));
-  } catch (err) {
-    console.error("[LOGIN] Error:", err.message);
-    res.status(500).json({ message: err.message });
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) throw new AppError("Invalid credentials", 400);
+
+  logger.info(`[LOGIN] Success: ${email} ${user.role}`);
+  res.json(formatUser(user));
+});
+
+const getMe = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id)
+    .select("-password")
+    .populate("assignedPG", "name address city amenities contactPhone rules")
+    .populate("assignedRoom", "roomNumber rent capacity occupancy floor type");
+  res.json(user);
+});
+
+const updateProfile = asyncHandler(async (req, res) => {
+  const allowed = [
+    "name", "phone", "emergencyContact", "emergencyPhone", "address",
+    "idProofType", "idProofNumber", "photoUrl", "idProofUrl",
+  ];
+  const updates = {};
+  allowed.forEach((field) => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+
+  const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true, runValidators: true })
+    .select("-password")
+    .populate("assignedPG", "name address city")
+    .populate("assignedRoom", "roomNumber rent");
+
+  logger.info(`[UPDATE PROFILE] Updated: ${req.user.email}`);
+  res.json(user);
+});
+
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user._id);
+
+  const match = await bcrypt.compare(currentPassword, user.password);
+  if (!match) throw new AppError("Current password is incorrect", 400);
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+  logger.info(`[CHANGE PASSWORD] Updated for ${user.email}`);
+  res.json({ message: "Password updated successfully" });
+});
+
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email: email.toLowerCase() });
+
+  // Always respond the same way to avoid leaking which emails are registered.
+  const genericResponse = { message: "If that email exists, a reset link has been sent." };
+  if (!user) return res.json(genericResponse);
+
+  const resetToken = user.createResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password/${resetToken}`;
+  await sendEmail({
+    to: user.email,
+    subject: "Reset your Smart PG password",
+    html: templates.resetPassword(user.name, resetUrl),
+  });
+
+  logger.info(`[FORGOT PASSWORD] Reset link generated for ${user.email}`);
+  res.json(genericResponse);
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  }).select("+resetPasswordToken +resetPasswordExpire");
+
+  if (!user) throw new AppError("Reset link is invalid or has expired", 400);
+
+  user.password = await bcrypt.hash(req.body.password, 10);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+
+  logger.info(`[RESET PASSWORD] Password reset for ${user.email}`);
+  res.json({ message: "Password reset successful. You can now log in." });
+});
+
+// --- Google OAuth (Sign in with Google) ------------------------------------
+// The frontend uses Google Identity Services to obtain a signed ID token
+// (credential) directly from Google — we never see the user's Google
+// password. We verify that token server-side, then issue our own JWT exactly
+// like a normal login, so the rest of the app doesn't need to know the
+// difference between auth providers.
+const googleAuth = asyncHandler(async (req, res) => {
+  if (!googleConfigured()) {
+    throw new AppError("Google sign-in is not configured on the server", 503);
   }
-};
 
+  const { credential, role } = req.body;
+  if (!credential) throw new AppError("Missing Google credential", 400);
 
-const getMe = async (req, res) => {
+  let payload;
   try {
-    const user = await User.findById(req.user._id)
-      .select("-password")
-      .populate("assignedPG", "name address city amenities contactPhone rules")
-      .populate("assignedRoom", "roomNumber rent capacity occupancy floor type");
-    console.log("[GET ME]", user.email);
-    res.json(user);
+    payload = await verifyGoogleToken(credential);
   } catch (err) {
-    console.error("[GET ME] Error:", err.message);
-    res.status(500).json({ message: err.message });
+    logger.warn(`[GOOGLE AUTH] Token verification failed: ${err.message}`);
+    throw new AppError("Google sign-in failed — invalid or expired token", 401);
   }
-};
 
-const updateProfile = async (req, res) => {
-  console.log("[UPDATE PROFILE] User:", req.user.email, "| Fields:", Object.keys(req.body));
-  try {
-    const allowed = ["name", "phone", "emergencyContact", "emergencyPhone", "address",
-      "idProofType", "idProofNumber", "photoUrl", "idProofUrl"];
-    const updates = {};
-    allowed.forEach((field) => {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
+  if (!payload?.email_verified) {
+    throw new AppError("Your Google email is not verified", 401);
+  }
+
+  const email = payload.email.toLowerCase();
+  let user = await User.findOne({ email })
+    .populate("assignedPG", "name address city")
+    .populate("assignedRoom", "roomNumber rent capacity occupancy");
+
+  if (user) {
+    if (!user.isActive) throw new AppError("This account has been deactivated", 403);
+    // Link the Google identity to an existing (possibly password-based) account.
+    if (!user.googleId) {
+      user.googleId = payload.sub;
+      if (!user.photoUrl && payload.picture) user.photoUrl = payload.picture;
+      await user.save();
+    }
+    logger.info(`[GOOGLE AUTH] Login: ${email}`);
+  } else {
+    const requestedRole = ["owner", "resident"].includes(role) ? role : "resident";
+    user = await User.create({
+      name: payload.name || email.split("@")[0],
+      email,
+      role: requestedRole,
+      authProvider: "google",
+      googleId: payload.sub,
+      photoUrl: payload.picture || "",
+      isVerified: true,
     });
-
-    const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true })
-      .select("-password")
-      .populate("assignedPG", "name address city")
-      .populate("assignedRoom", "roomNumber rent");
-
-    console.log("[UPDATE PROFILE] Updated:", req.user.email);
-    res.json(user);
-  } catch (err) {
-    console.error("[UPDATE PROFILE] Error:", err.message);
-    res.status(500).json({ message: err.message });
+    logger.info(`[GOOGLE AUTH] New account created: ${email} (${requestedRole})`);
+    sendEmail({ to: user.email, subject: "Welcome to Smart PG", html: templates.welcome(user.name) });
   }
-};
 
-module.exports = { signup, login, getMe, updateProfile };
+  res.json(formatUser(user));
+});
+
+module.exports = {
+  signup,
+  login,
+  googleAuth,
+  getMe,
+  updateProfile,
+  changePassword,
+  forgotPassword,
+  resetPassword,
+};

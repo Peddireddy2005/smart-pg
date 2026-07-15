@@ -1,5 +1,7 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import NotificationBell from "../components/NotificationBell";
+import { clearSession, getSession } from "../services/authService";
 
 const links = [
   { to: "/resident/dashboard", icon: "⊞", label: "Dashboard" },
@@ -10,12 +12,12 @@ const links = [
 ];
 
 export default function ResidentLayout() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = getSession();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
   const logout = () => {
-    localStorage.removeItem("user");
+    clearSession();
     navigate("/login");
   };
 
@@ -68,6 +70,9 @@ export default function ResidentLayout() {
       </aside>
 
       <main className="flex-1 overflow-y-auto">
+        <div className="flex items-center justify-end px-6 md:px-8 py-3 border-b border-gray-100 bg-white">
+          <NotificationBell dark={false} />
+        </div>
         <div className="p-6 md:p-8 page-fade">
           <Outlet />
         </div>

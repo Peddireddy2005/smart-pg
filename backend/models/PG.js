@@ -8,6 +8,12 @@ const pgSchema = new mongoose.Schema(
     locality: { type: String, default: "" },
     description: { type: String, default: "" },
     amenities: [{ type: String }],
+    images: [
+      {
+        url: { type: String, required: true },
+        publicId: { type: String, default: "" },
+      },
+    ],
     rentRange: {
       min: { type: Number, default: 0 },
       max: { type: Number, default: 0 },
@@ -15,8 +21,15 @@ const pgSchema = new mongoose.Schema(
     owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     contactPhone: { type: String, default: "" },
     rules: { type: String, default: "" },
+    ratingsAverage: { type: Number, default: 0, min: 0, max: 5 },
+    ratingsCount: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
+
+pgSchema.index({ city: 1 });
+pgSchema.index({ owner: 1 });
+pgSchema.index({ name: "text", city: "text", locality: "text" });
 
 module.exports = mongoose.model("PG", pgSchema);

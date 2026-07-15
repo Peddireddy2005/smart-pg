@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../services/api";
+import { saveSession } from "../services/authService";
+import GoogleAuthButton from "../components/GoogleAuthButton";
 
 export default function Signup() {
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "resident" });
@@ -13,17 +16,12 @@ export default function Signup() {
     setError(""); setLoading(true);
     try {
       const { data } = await api.post("/auth/signup", form);
-      localStorage.setItem(
-        "user",
-        JSON.stringify(data)
-      );
-
-      window.dispatchEvent(
-        new Event("storage")
-      );
+      saveSession(data);
       navigate(data.role === "owner" ? "/owner/dashboard" : "/resident/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Signup failed");
+      const message = err.response?.data?.message || "Signup failed";
+      setError(message);
+      toast.error(message);
     } finally { setLoading(false); }
   };
 
@@ -41,6 +39,27 @@ export default function Signup() {
 
         <div className="card p-8">
           {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">{error}</div>}
+
+          <div className="mb-5">
+            <label className="label">I am a</label>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {["resident", "owner"].map((r) => (
+                <button key={r} type="button"
+                  onClick={() => setForm({ ...form, role: r })}
+                  className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition ${form.role === r ? "border-brand-500 bg-brand-50 text-brand-600" : "border-gray-200 text-slate-500 hover:border-gray-300"}`}>
+                  {r === "resident" ? "🏠 Resident" : "🔑 Owner"}
+                </button>
+              ))}
+            </div>
+            <GoogleAuthButton role={form.role} text="signup_with" />
+          </div>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-slate-400 text-xs uppercase">or</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
           <form onSubmit={submit} className="space-y-4">
             <div>
               <label className="label">Full Name</label>
@@ -56,18 +75,6 @@ export default function Signup() {
               <label className="label">Password</label>
               <input className="input" type="password" placeholder="Min 6 characters" required minLength={6}
                 value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-            </div>
-            <div>
-              <label className="label">I am a</label>
-              <div className="grid grid-cols-2 gap-3">
-                {["resident", "owner"].map((r) => (
-                  <button key={r} type="button"
-                    onClick={() => setForm({ ...form, role: r })}
-                    className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition ${form.role === r ? "border-brand-500 bg-brand-50 text-brand-600" : "border-gray-200 text-slate-500 hover:border-gray-300"}`}>
-                    {r === "resident" ? "🏠 Resident" : "🔑 Owner"}
-                  </button>
-                ))}
-              </div>
             </div>
             <button disabled={loading} className="btn-primary w-full justify-center mt-2">
               {loading ? "Creating..." : "Create Account"}

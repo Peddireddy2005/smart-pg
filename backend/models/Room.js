@@ -14,4 +14,6 @@ const roomSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+roomSchema.index({ pg: 1 });
+
 module.exports = mongoose.model("Room", roomSchema);

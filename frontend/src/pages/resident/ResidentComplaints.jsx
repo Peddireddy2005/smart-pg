@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import api from "../../services/api";
 
 const STATUS_STYLES = { pending: "badge-yellow", "in-progress": "badge-blue", resolved: "badge-green" };
@@ -6,26 +7,32 @@ const STATUS_STYLES = { pending: "badge-yellow", "in-progress": "badge-blue", re
 export default function ResidentComplaints() {
   const [complaints, setComplaints] = useState([]);
   const [hasPG, setHasPG] = useState(true);
-  const [form, setForm] = useState({ title: "", description: "" });
+  const [form, setForm] = useState({ title: "", description: "", priority: "medium" });
   const [msg, setMsg] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingList, setLoadingList] = useState(true);
 
   useEffect(() => {
     api.get("/auth/me").then(({ data }) => { if (!data.assignedPG) setHasPG(false); });
-    api.get("/complaints/my").then(({ data }) => setComplaints(data)).catch(() => {});
+    api.get("/complaints/my")
+      .then(({ data }) => setComplaints(data))
+      .catch(() => {})
+      .finally(() => setLoadingList(false));
   }, []);
 
   const submit = async (e) => {
     e.preventDefault();
     setMsg(null); setLoading(true);
-    console.log("[COMPLAINTS] Submit:", form.title);
     try {
       const { data } = await api.post("/complaints", form);
       setComplaints((prev) => [data, ...prev]);
-      setForm({ title: "", description: "" });
+      setForm({ title: "", description: "", priority: "medium" });
       setMsg({ type: "success", text: "Complaint submitted!" });
+      toast.success("Complaint submitted");
     } catch (err) {
-      setMsg({ type: "error", text: err.response?.data?.message || "Failed" });
+      const message = err.response?.data?.message || "Failed";
+      setMsg({ type: "error", text: message });
+      toast.error(message);
     } finally { setLoading(false); }
   };
 
@@ -41,10 +48,20 @@ export default function ResidentComplaints() {
               {msg.text}
             </div>
           )}
-          <div>
-            <label className="label">Title</label>
-            <input className="input" placeholder="e.g. WiFi not working" required
-              value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Title</label>
+              <input className="input" placeholder="e.g. WiFi not working" required
+                value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">Priority</label>
+              <select className="input" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
           </div>
           <div>
             <label className="label">Description</label>
@@ -61,18 +78,38 @@ export default function ResidentComplaints() {
         </div>
       )}
 
-      <h2 className="font-heading font-semibold text-slate-700 mb-3">My Complaints ({complaints.length})</h2>
-      {complaints.length === 0 ? <p className="text-slate-400">No complaints yet.</p> : (
+      <h2 className="font-heading font-semibold text-slate-700 mb-3">
+        My Complaints ({complaints.length})
+      </h2>
+
+      {loadingList ? (
+        <p className="text-slate-400">Loading...</p>
+      ) : complaints.length === 0 ? (
+        <p className="text-slate-400">No complaints yet.</p>
+      ) : (
         <div className="space-y-3">
           {complaints.map((c) => (
             <div key={c._id} className="card p-4">
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-start mb-2 flex-wrap gap-2">
                 <p className="font-semibold text-slate-800">{c.title}</p>
-                <span className={STATUS_STYLES[c.status]}>{c.status}</span>
+                <div className="flex gap-2">
+                  {c.priority && (
+                    <span className={c.priority === "high" ? "badge-red" : c.priority === "medium" ? "badge-yellow" : "badge-gray"}>
+                      {c.priority}
+                    </span>
+                  )}
+                  <span className={STATUS_STYLES[c.status]}>{c.status}</span>
+                </div>
               </div>
               <p className="text-sm text-slate-500">{c.description}</p>
-              {c.ownerNote && <p className="text-sm text-blue-700 mt-2 bg-blue-50 rounded-lg px-3 py-2">💬 Owner: {c.ownerNote}</p>}
-              <p className="text-xs text-slate-400 mt-2">{c.pg?.name} · {new Date(c.createdAt).toLocaleDateString()}</p>
+              {c.ownerNote && (
+                <p className="text-sm text-blue-700 mt-2 bg-blue-50 rounded-lg px-3 py-2">
+                  💬 Owner: {c.ownerNote}
+                </p>
+              )}
+              <p className="text-xs text-slate-400 mt-2">
+                {c.pg?.name} · {new Date(c.createdAt).toLocaleDateString()}
+              </p>
             </div>
           ))}
         </div>

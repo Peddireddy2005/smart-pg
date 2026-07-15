@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../services/api";
+import { saveSession } from "../services/authService";
+import GoogleAuthButton from "../components/GoogleAuthButton";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -23,14 +26,7 @@ export default function Login() {
     try {
       const { data } = await api.post("/auth/login", form);
 
-      localStorage.setItem(
-        "user",
-        JSON.stringify(data)
-      );
-
-      window.dispatchEvent(
-        new Event("storage")
-      );
+      saveSession(data);
 
       if (data.role === "owner") {
         navigate("/owner/dashboard");
@@ -38,10 +34,9 @@ export default function Login() {
         navigate("/resident/dashboard");
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Login failed"
-      );
+      const message = err.response?.data?.message || "Login failed";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -82,6 +77,16 @@ export default function Login() {
             </div>
           )}
 
+          <div className="mb-5">
+            <GoogleAuthButton role="resident" />
+          </div>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-slate-400 text-xs uppercase">or</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
           <form
             onSubmit={submit}
             className="space-y-5"
@@ -108,9 +113,14 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="label">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="label !mb-0">
+                  Password
+                </label>
+                <Link to="/forgot-password" className="text-brand-500 text-xs font-semibold hover:text-brand-600">
+                  Forgot password?
+                </Link>
+              </div>
 
               <div className="relative">
 

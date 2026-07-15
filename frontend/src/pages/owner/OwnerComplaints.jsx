@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import api from "../../services/api";
 
 const STATUS_STYLES = {
   pending: "badge-yellow",
   "in-progress": "badge-blue",
   resolved: "badge-green",
+};
+const PRIORITY_STYLES = {
+  low: "badge-gray",
+  medium: "badge-yellow",
+  high: "badge-red",
 };
 
 export default function OwnerComplaints() {
@@ -14,14 +20,18 @@ export default function OwnerComplaints() {
 
   useEffect(() => {
     api.get("/complaints/owner/all")
-      .then(({ data }) => { setComplaints(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then(({ data }) => setComplaints(data))
+      .catch(() => toast.error("Failed to load complaints"))
+      .finally(() => setLoading(false));
   }, []);
 
   const update = async (id, status) => {
-    console.log("[OWNER COMPLAINTS] Update:", id, "→", status);
-    const { data } = await api.put(`/complaints/${id}/status`, { status });
-    setComplaints((prev) => prev.map((c) => (c._id === id ? data : c)));
+    try {
+      const { data } = await api.put(`/complaints/${id}/status`, { status });
+      setComplaints((prev) => prev.map((c) => (c._id === id ? data : c)));
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update");
+    }
   };
 
   const filtered = filter === "all" ? complaints : complaints.filter((c) => c.status === filter);
@@ -30,9 +40,9 @@ export default function OwnerComplaints() {
     <div>
       <h1 className="font-heading text-3xl font-bold text-slate-900 mb-6">Complaints</h1>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         {["all", "pending", "in-progress", "resolved"].map((s) => (
-          <button key={s} onClick={() => { console.log("[COMPLAINTS] Filter:", s); setFilter(s); }}
+          <button key={s} onClick={() => setFilter(s)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition capitalize ${filter === s ? "bg-slate-900 text-white" : "bg-white border border-gray-200 text-slate-600 hover:border-slate-300"}`}>
             {s === "all" ? "All" : s}
             <span className="ml-1.5 opacity-60 text-xs">
@@ -52,13 +62,16 @@ export default function OwnerComplaints() {
           {filtered.map((c) => (
             <div key={c._id} className="card p-5">
               <div className="flex justify-between items-start gap-4">
-                <div className="flex gap-3 flex-1">
-                  {c.resident?.photoUrl ? <img src={c.resident.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover shrink-0 mt-0.5" /> :
-                    <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-sm shrink-0 mt-0.5">{c.resident?.name?.charAt(0)}</div>}
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="flex gap-3 flex-1 min-w-0">
+                  {c.resident?.photoUrl
+                    ? <img src={c.resident.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover shrink-0 mt-0.5" />
+                    : <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-sm shrink-0 mt-0.5">{c.resident?.name?.charAt(0)}</div>
+                  }
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <p className="font-semibold text-slate-800">{c.title}</p>
                       <span className={STATUS_STYLES[c.status]}>{c.status}</span>
+                      <span className={PRIORITY_STYLES[c.priority]}>{c.priority} priority</span>
                     </div>
                     <p className="text-sm text-slate-500">{c.description}</p>
                     <p className="text-xs text-slate-400 mt-1.5">

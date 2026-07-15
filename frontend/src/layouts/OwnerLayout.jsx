@@ -1,20 +1,22 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import NotificationBell from "../components/NotificationBell";
+import { clearSession, getSession } from "../services/authService";
 
 const links = [
   { to: "/owner/dashboard", icon: "⊞", label: "Dashboard" },
+  { to: "/owner/analytics", icon: "📊", label: "Analytics" },
   { to: "/owner/payments", icon: "₹", label: "Payments" },
   { to: "/owner/complaints", icon: "⚑", label: "Complaints" },
 ];
 
 export default function OwnerLayout() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = getSession();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
   const logout = () => {
-    console.log("[LAYOUT] Owner logout");
-    localStorage.removeItem("user");
+    clearSession();
     navigate("/login");
   };
 
@@ -32,9 +34,13 @@ export default function OwnerLayout() {
         {!collapsed && (
           <div className="px-4 py-4 border-b border-white/10">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-400 font-bold text-sm shrink-0">
-                {user?.name?.charAt(0).toUpperCase()}
-              </div>
+              {user?.photoUrl ? (
+                <img src={user.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-400 font-bold text-sm shrink-0">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="overflow-hidden">
                 <p className="text-white text-sm font-semibold truncate">{user?.name}</p>
                 <p className="text-slate-400 text-xs truncate">{user?.email}</p>
@@ -69,6 +75,9 @@ export default function OwnerLayout() {
 
       {/* Main */}
       <main className="flex-1 overflow-y-auto">
+        <div className="flex items-center justify-end px-6 md:px-8 py-3 border-b border-gray-100 bg-white">
+          <NotificationBell dark={false} />
+        </div>
         <div className="p-6 md:p-8 page-fade">
           <Outlet />
         </div>

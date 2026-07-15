@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,9 @@
     "axios": "^1.16.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-router-dom": "^7.15.1"
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^7.15.1",
+    "recharts": "^2.13.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
