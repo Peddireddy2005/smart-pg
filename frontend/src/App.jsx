@@ -8,10 +8,12 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PGListings from "./pages/PGListings";
 import PGDetails from "./pages/PGDetails";
+import JoinInvite from "./pages/JoinInvite";
 import NotFound from "./pages/NotFound";
 
 // Owner pages
@@ -27,6 +29,14 @@ import OwnerComplaints from "./pages/owner/OwnerComplaints";
 import OwnerAnalytics from "./pages/owner/OwnerAnalytics";
 import ResidentProfile from "./pages/owner/ResidentProfile";
 import AllocateResident from "./pages/owner/AllocateResident";
+import OwnerAnnouncements from "./pages/owner/Announcements";
+import OwnerStaff from "./pages/owner/Staff";
+import OwnerVisitors from "./pages/owner/Visitors";
+import OwnerExpenses from "./pages/owner/Expenses";
+import OwnerInventory from "./pages/owner/Inventory";
+import OwnerReports from "./pages/owner/Reports";
+import OwnerActivityLogs from "./pages/owner/ActivityLogs";
+import OwnerSettings from "./pages/owner/Settings";
 
 // Resident pages
 import ResidentLayout from "./layouts/ResidentLayout";
@@ -35,11 +45,18 @@ import ResidentRoom from "./pages/resident/ResidentRoom";
 import ResidentPayments from "./pages/resident/ResidentPayments";
 import ResidentComplaints from "./pages/resident/ResidentComplaints";
 import MyProfile from "./pages/resident/MyProfile";
+import ResidentAnnouncements from "./pages/resident/Announcements";
+import ResidentVisitors from "./pages/resident/Visitors";
+
+// Admin pages (spec §27 — Future / minimal)
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminOwners from "./pages/admin/AdminOwners";
+import AdminPGs from "./pages/admin/AdminPGs";
 
 import { getSession, clearSession } from "./services/authService";
 import { setUnauthorizedHandler } from "./services/api";
 
-// Route guard — checks localStorage for a valid session.
 const Guard = ({ role, children }) => {
   const user = getSession();
   if (!user) return <Navigate to="/login" replace />;
@@ -47,8 +64,6 @@ const Guard = ({ role, children }) => {
   return children;
 };
 
-// Registers a global 401 handler so any expired token anywhere in the app
-// clears the session and redirects to login automatically.
 function SessionGuard() {
   const navigate = useNavigate();
   useEffect(() => {
@@ -72,10 +87,12 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/pgs" element={<PGListings />} />
           <Route path="/pgs/:id" element={<PGDetails />} />
+          <Route path="/join/:token" element={<JoinInvite />} />
 
           {/* Owner */}
           <Route path="/owner" element={<Guard role="owner"><OwnerLayout /></Guard>}>
@@ -90,6 +107,14 @@ export default function App() {
             <Route path="pg/:pgId/allocate" element={<AllocateResident />} />
             <Route path="payments" element={<OwnerPayments />} />
             <Route path="complaints" element={<OwnerComplaints />} />
+            <Route path="announcements" element={<OwnerAnnouncements />} />
+            <Route path="staff" element={<OwnerStaff />} />
+            <Route path="visitors" element={<OwnerVisitors />} />
+            <Route path="expenses" element={<OwnerExpenses />} />
+            <Route path="inventory" element={<OwnerInventory />} />
+            <Route path="reports" element={<OwnerReports />} />
+            <Route path="activity-logs" element={<OwnerActivityLogs />} />
+            <Route path="settings" element={<OwnerSettings />} />
             <Route path="resident/:residentId" element={<ResidentProfile />} />
           </Route>
 
@@ -100,7 +125,17 @@ export default function App() {
             <Route path="room" element={<ResidentRoom />} />
             <Route path="payments" element={<ResidentPayments />} />
             <Route path="complaints" element={<ResidentComplaints />} />
+            <Route path="announcements" element={<ResidentAnnouncements />} />
+            <Route path="visitors" element={<ResidentVisitors />} />
             <Route path="profile" element={<MyProfile />} />
+          </Route>
+
+          {/* Admin (platform-level, future-facing per spec) */}
+          <Route path="/admin" element={<Guard role="admin"><AdminLayout /></Guard>}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="owners" element={<AdminOwners />} />
+            <Route path="pgs" element={<AdminPGs />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

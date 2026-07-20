@@ -1,6 +1,3 @@
-// Wraps an async controller so any thrown/rejected error is forwarded to
-// the centralized error handler instead of crashing the process or hanging
-// the request.
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };

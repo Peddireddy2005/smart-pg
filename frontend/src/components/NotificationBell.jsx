@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from "../services/notificationService";
 
-const TYPE_ICON = { payment: "💳", complaint: "📢", allocation: "🏠", review: "⭐", system: "🔔" };
+const TYPE_ICON = { payment: "💳", complaint: "📢", allocation: "🏠", review: "⭐", system: "🔔", announcement: "📣", visitor: "🚪" };
 
 export default function NotificationBell({ dark = true }) {
   const [open, setOpen] = useState(false);
@@ -23,7 +23,7 @@ export default function NotificationBell({ dark = true }) {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 60000); // poll every minute
+    const interval = setInterval(load, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -55,7 +55,7 @@ export default function NotificationBell({ dark = true }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`relative p-2 rounded-xl transition ${dark ? "hover:bg-white/10 text-white" : "hover:bg-slate-100 text-slate-600"}`}
+        className={`relative p-2 rounded-xl transition ${dark ? "hover:bg-white/10 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"}`}
       >
         <span className="text-lg">🔔</span>
         {unreadCount > 0 && (
@@ -66,9 +66,9 @@ export default function NotificationBell({ dark = true }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 max-h-96 overflow-y-auto">
-          <div className="flex items-center justify-between px-4 py-3 border-b">
-            <p className="font-heading font-semibold text-slate-800 text-sm">Notifications</p>
+        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 max-h-96 overflow-y-auto">
+          <div className="flex items-center justify-between px-4 py-3 border-b dark:border-slate-700">
+            <p className="font-heading font-semibold text-slate-800 dark:text-white text-sm">Notifications</p>
             {unreadCount > 0 && (
               <button onClick={handleMarkAll} className="text-brand-500 text-xs hover:underline">Mark all read</button>
             )}
@@ -80,12 +80,12 @@ export default function NotificationBell({ dark = true }) {
               <button
                 key={n._id}
                 onClick={() => handleClick(n)}
-                className={`w-full text-left px-4 py-3 border-b last:border-0 hover:bg-slate-50 transition flex gap-3 ${!n.isRead ? "bg-brand-50/40" : ""}`}
+                className={`w-full text-left px-4 py-3 border-b dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition flex gap-3 ${!n.isRead ? "bg-brand-50/40 dark:bg-brand-900/10" : ""}`}
               >
                 <span className="text-lg shrink-0">{TYPE_ICON[n.type] || "🔔"}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800">{n.title}</p>
-                  <p className="text-xs text-slate-500 line-clamp-2">{n.message}</p>
+                  <p className="text-sm font-medium text-slate-800 dark:text-white">{n.title}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{n.message}</p>
                   <p className="text-[11px] text-slate-400 mt-0.5">{new Date(n.createdAt).toLocaleString()}</p>
                 </div>
                 {!n.isRead && <span className="w-2 h-2 rounded-full bg-brand-500 shrink-0 mt-1.5" />}

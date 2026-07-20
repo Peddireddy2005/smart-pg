@@ -8,11 +8,6 @@ const getClient = () => {
   return client;
 };
 
-/**
- * Verifies a Google Identity Services credential (ID token) sent from the
- * frontend and returns the verified payload (email, name, picture, sub).
- * Throws if the token is invalid, expired, or issued for a different client.
- */
 const verifyGoogleToken = async (idToken) => {
   const ticket = await getClient().verifyIdToken({
     idToken,

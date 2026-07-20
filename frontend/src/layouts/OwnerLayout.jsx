@@ -1,6 +1,8 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import NotificationBell from "../components/NotificationBell";
+import GlobalSearch from "../components/GlobalSearch";
+import ThemeToggle from "../components/ThemeToggle";
 import { clearSession, getSession } from "../services/authService";
 
 const links = [
@@ -8,6 +10,14 @@ const links = [
   { to: "/owner/analytics", icon: "📊", label: "Analytics" },
   { to: "/owner/payments", icon: "₹", label: "Payments" },
   { to: "/owner/complaints", icon: "⚑", label: "Complaints" },
+  { to: "/owner/announcements", icon: "📣", label: "Announcements" },
+  { to: "/owner/staff", icon: "🧑‍🔧", label: "Staff" },
+  { to: "/owner/visitors", icon: "🚪", label: "Visitors" },
+  { to: "/owner/expenses", icon: "💸", label: "Expenses" },
+  { to: "/owner/inventory", icon: "📦", label: "Inventory" },
+  { to: "/owner/reports", icon: "📄", label: "Reports" },
+  { to: "/owner/activity-logs", icon: "🕒", label: "Activity Logs" },
+  { to: "/owner/settings", icon: "⚙️", label: "Settings" },
 ];
 
 export default function OwnerLayout() {
@@ -21,16 +31,13 @@ export default function OwnerLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8f7f4]">
-      {/* Sidebar */}
-      <aside className={`${collapsed ? "w-16" : "w-60"} bg-slate-950 flex flex-col transition-all duration-300 shrink-0`}>
-        {/* Logo */}
+    <div className="flex h-screen overflow-hidden bg-[#f8f7f4] dark:bg-slate-900">
+      <aside className={`${collapsed ? "w-16" : "w-64"} bg-slate-950 flex flex-col transition-all duration-300 shrink-0`}>
         <div className="px-4 py-5 border-b border-white/10 flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-sm shrink-0">S</div>
           {!collapsed && <span className="text-white font-heading font-bold text-lg">Smart PG</span>}
         </div>
 
-        {/* User */}
         {!collapsed && (
           <div className="px-4 py-4 border-b border-white/10">
             <div className="flex items-center gap-3">
@@ -49,7 +56,6 @@ export default function OwnerLayout() {
           </div>
         )}
 
-        {/* Nav */}
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {links.map(({ to, icon, label }) => (
             <NavLink key={to} to={to}
@@ -60,7 +66,6 @@ export default function OwnerLayout() {
           ))}
         </nav>
 
-        {/* Bottom */}
         <div className="px-2 py-4 border-t border-white/10 space-y-1">
           <button onClick={() => setCollapsed(!collapsed)} className="sidebar-link w-full">
             <span className="text-lg w-5 text-center shrink-0">{collapsed ? "→" : "←"}</span>
@@ -73,10 +78,13 @@ export default function OwnerLayout() {
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 overflow-y-auto">
-        <div className="flex items-center justify-end px-6 md:px-8 py-3 border-b border-gray-100 bg-white">
-          <NotificationBell dark={false} />
+        <div className="flex items-center justify-between gap-4 px-6 md:px-8 py-3 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <GlobalSearch />
+          <div className="flex items-center gap-2 shrink-0">
+            <ThemeToggle dark={false} />
+            <NotificationBell dark={false} />
+          </div>
         </div>
         <div className="p-6 md:p-8 page-fade">
           <Outlet />

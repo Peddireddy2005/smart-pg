@@ -52,6 +52,7 @@ const complaintValidator = [
   body("title").trim().notEmpty().withMessage("Title is required").isLength({ max: 150 }),
   body("description").trim().notEmpty().withMessage("Description is required").isLength({ max: 2000 }),
   body("priority").optional().isIn(["low", "medium", "high"]),
+  body("category").optional().isIn(["Electrical", "Plumbing", "Internet", "Cleaning", "Food", "Others"]),
 ];
 
 const reviewValidator = [
@@ -69,6 +70,43 @@ const paginationValidator = [
   query("limit").optional().isInt({ min: 1, max: 100 }),
 ];
 
+const verifyEmailValidator = [
+  body("email").trim().isEmail().withMessage("A valid email is required").normalizeEmail(),
+  body("code").trim().isLength({ min: 4, max: 6 }).withMessage("Invalid verification code"),
+];
+
+const resendOtpValidator = [
+  body("email").trim().isEmail().withMessage("A valid email is required").normalizeEmail(),
+];
+
+const announcementValidator = [
+  body("title").trim().notEmpty().withMessage("Title is required").isLength({ max: 150 }),
+  body("message").trim().notEmpty().withMessage("Message is required").isLength({ max: 2000 }),
+  body("type").optional().isIn(["Water Shutdown", "Rent Reminder", "Holiday", "Cleaning", "General"]),
+];
+
+const staffValidator = [
+  body("name").trim().notEmpty().withMessage("Name is required"),
+  body("role").optional().isIn(["Cleaner", "Cook", "Security", "Electrician", "Plumber", "Other"]),
+  body("salary").optional().isFloat({ min: 0 }),
+];
+
+const visitorValidator = [
+  body("name").trim().notEmpty().withMessage("Visitor name is required"),
+  body("phone").optional().trim(),
+];
+
+const expenseValidator = [
+  body("category").isIn(["Electricity", "Water", "Maintenance", "Internet", "Salary", "Repairs", "Other"]),
+  body("amount").isFloat({ min: 0 }).withMessage("Amount must be a positive number"),
+];
+
+const inventoryValidator = [
+  body("name").trim().notEmpty().withMessage("Item name is required"),
+  body("category").optional().isIn(["Beds", "Mattress", "Fan", "AC", "Table", "Chair", "Cupboard", "Other"]),
+  body("quantity").optional().isInt({ min: 0 }),
+];
+
 module.exports = {
   signupValidator,
   loginValidator,
@@ -83,4 +121,11 @@ module.exports = {
   reviewValidator,
   generateRentValidator,
   paginationValidator,
+  verifyEmailValidator,
+  resendOtpValidator,
+  announcementValidator,
+  staffValidator,
+  visitorValidator,
+  expenseValidator,
+  inventoryValidator,
 };

@@ -2,10 +2,6 @@ import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { uploadImage } from "../services/uploadService";
 
-/**
- * A drop-in replacement for the old "convert to base64 and stuff into Mongo"
- * pattern. Uploads straight to Cloudinary via the backend and returns a URL.
- */
 export default function ImageUploader({
   value,
   onChange,
@@ -46,7 +42,7 @@ export default function ImageUploader({
           <img
             src={value}
             alt=""
-            className={`object-cover border-2 border-gray-100 ${round ? "w-20 h-20 rounded-full" : "w-24 h-16 rounded-xl"}`}
+            className={`object-cover border-2 border-gray-100 dark:border-slate-700 ${round ? "w-20 h-20 rounded-full" : "w-24 h-16 rounded-xl"}`}
           />
           <button type="button" disabled={loading} onClick={() => inputRef.current.click()} className="btn-secondary text-sm">
             {loading ? "Uploading..." : "Change"}
@@ -57,7 +53,7 @@ export default function ImageUploader({
           type="button"
           disabled={loading}
           onClick={() => inputRef.current.click()}
-          className="border-2 border-dashed border-gray-300 rounded-xl px-6 py-4 text-slate-500 hover:border-brand-400 hover:text-brand-500 transition w-full text-sm"
+          className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl px-6 py-4 text-slate-500 dark:text-slate-400 hover:border-brand-400 hover:text-brand-500 transition w-full text-sm"
         >
           {loading ? "Uploading..." : `📎 ${label}`}
         </button>

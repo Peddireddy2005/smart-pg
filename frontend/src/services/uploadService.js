@@ -1,9 +1,5 @@
 import api from "./api";
 
-/**
- * Uploads a single image file and returns its hosted URL.
- * `purpose` is just a hint for which Cloudinary folder to use ("profile" | "id-proof").
- */
 export const uploadImage = async (file, purpose = "misc") => {
   const formData = new FormData();
   formData.append("image", file);
@@ -11,7 +7,7 @@ export const uploadImage = async (file, purpose = "misc") => {
   const { data } = await api.post("/upload/image", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return data; // { url, publicId }
+  return data;
 };
 
 export const uploadPGImages = async (pgId, files) => {

@@ -61,12 +61,8 @@ const sendDueReminders = async () => {
 };
 
 const initCronJobs = () => {
-  // 1st of every month at 6 AM — create rent records for all active residents.
   cron.schedule("0 6 1 * *", () => generateRentsForAllPGs().catch((e) => logger.error(`[CRON] ${e.message}`)));
-
-  // Every day at 9 AM — remind anyone with pending rent this month.
   cron.schedule("0 9 * * *", () => sendDueReminders().catch((e) => logger.error(`[CRON] ${e.message}`)));
-
   logger.info("[CRON] Scheduled jobs initialized");
 };
 

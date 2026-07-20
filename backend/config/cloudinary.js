@@ -13,12 +13,6 @@ const isConfigured = () =>
       process.env.CLOUDINARY_API_SECRET
   );
 
-/**
- * Uploads a buffer (from multer memory storage) to Cloudinary.
- * @param {Buffer} buffer
- * @param {string} folder
- * @returns {Promise<{url: string, publicId: string}>}
- */
 const uploadBuffer = (buffer, folder = "smart-pg") =>
   new Promise((resolve, reject) => {
     if (!isConfigured()) {
@@ -43,7 +37,6 @@ const deleteImage = async (publicId) => {
   try {
     await cloudinary.uploader.destroy(publicId);
   } catch (err) {
-    // Non-fatal — log and move on.
     require("./logger").warn(`[CLOUDINARY] Failed to delete ${publicId}: ${err.message}`);
   }
 };

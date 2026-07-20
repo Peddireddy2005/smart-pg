@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const {
-  createPG, getAllPGs, getCities, getOwnerPGs, getPGById, updatePG, deletePG,
+  createPG, getAllPGs, getCities, getOwnerPGs, getPGById, updatePG, archivePG, deletePG,
   uploadPGImages, deletePGImage, getOwnerStats, getOwnerRevenueTrend,
 } = require("../controllers/pgController");
 const { protect } = require("../middleware/authMiddleware");
@@ -18,6 +18,7 @@ router.get("/owner/revenue-trend", protect, ownerOnly, getOwnerRevenueTrend);
 router.get("/:id", getPGById);
 router.post("/", protect, ownerOnly, pgValidator, validate, createPG);
 router.put("/:id", protect, ownerOnly, updatePG);
+router.put("/:id/archive", protect, ownerOnly, archivePG);
 router.delete("/:id", protect, ownerOnly, deletePG);
 router.post("/:id/images", protect, ownerOnly, upload.array("images", 8), uploadPGImages);
 router.delete("/:id/images/:imageId", protect, ownerOnly, deletePGImage);

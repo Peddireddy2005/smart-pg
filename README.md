@@ -50,8 +50,6 @@ MONGO_URI=mongodb://localhost:27017/smart-pg
 JWT_SECRET=any-long-random-string-you-make-up
 ```
 
-Your `.env` already has these defaults from `.env.example` — so if MongoDB is running locally you can just start and it works.
-
 ---
 
 ## 3. Create demo accounts (optional but recommended)
@@ -61,134 +59,126 @@ cd backend
 npm run seed
 ```
 
-This creates two ready-to-use accounts:
+This creates three ready-to-use accounts:
 
 | Role | Email | Password |
 |------|-------|----------|
 | Owner | owner@demo.com | password123 |
 | Resident | resident@demo.com | password123 |
+| Admin | admin@demo.com | password123 |
+
+The seed also adds a demo staff member and a sample announcement so those
+screens aren't empty on first login.
 
 ---
 
 ## 4. Optional features — set up when you want them
 
-These are all **optional**. The app runs fine without any of them.
+All optional. The app runs fine without any of them; the relevant feature
+just shows a friendly "not configured" message instead.
 
-### Payments (Razorpay)
+### Payments (Razorpay) — for the "Smart PG (Online)" method
 
-Sign up free at https://dashboard.razorpay.com → Settings → API Keys → Generate test keys.
+Sign up free at https://dashboard.razorpay.com → Settings → API Keys.
 
-In `backend/.env`:
-```
-RAZORPAY_KEY_ID=rzp_test_xxxx
-RAZORPAY_KEY_SECRET=xxxx
-```
+`backend/.env`: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, optionally `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_CONVENIENCE_FEE` (defaults to 20).
+`frontend/.env`: `VITE_RAZORPAY_KEY_ID`
 
-In `frontend/.env`:
-```
-VITE_RAZORPAY_KEY_ID=rzp_test_xxxx
-```
+Direct UPI and Cash payment methods work without Razorpay — they just need
+the owner's UPI ID set in **Owner → Settings**.
 
-Without this: residents see a "Pay Now" button but clicking it shows an error. Everything else works.
+### Image uploads (Cloudinary) — for photos, ID proofs, documents, complaint images, payment screenshots
 
----
+Sign up free at https://cloudinary.com.
 
-### Image uploads (Cloudinary)
-
-Sign up free at https://cloudinary.com → copy credentials from the dashboard.
-
-In `backend/.env`:
-```
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-```
-
-Without this: uploading photos shows an error. All other features work fine.
-
----
+`backend/.env`: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
 
 ### Google Sign-In
 
-Go to https://console.cloud.google.com → APIs & Credentials → Create OAuth 2.0 Client ID (Web application) → add `http://localhost:5173` as an Authorized JavaScript origin.
+`console.cloud.google.com` → OAuth 2.0 Client ID → add `http://localhost:5173` as an origin.
 
-In `backend/.env`:
-```
-GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
-```
+`backend/.env`: `GOOGLE_CLIENT_ID` · `frontend/.env`: `VITE_GOOGLE_CLIENT_ID`
 
-In `frontend/.env`:
-```
-VITE_GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
-```
+### Email notifications (Gmail SMTP)
 
-Without this: the "Sign in with Google" button is hidden. Email/password login works normally.
+`backend/.env`: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`
 
----
+### Mobile OTP login
 
-### Email notifications (Gmail)
-
-1. Enable 2-Step Verification on your Google account
-2. Go to https://myaccount.google.com/apppasswords → generate an App Password
-3. In `backend/.env`:
-```
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your@gmail.com
-SMTP_PASS=the-app-password-you-just-generated
-```
-
-Without this: emails are silently skipped. Everything else works fine.
+Works out of the box in development — OTP codes are logged to the backend
+console (and echoed in the API response as `devHint`) since no SMS gateway
+is wired up. To go live, plug a provider (Twilio, MSG91, etc.) into
+`backend/utils/otp.js`.
 
 ---
 
-## 5. Project structure (quick reference)
+## 5. Project structure
 
 ```
 smart-pg/
 ├── backend/
 │   ├── config/         ← DB, Cloudinary, Razorpay, Google, email, logger
-│   ├── controllers/    ← auth, pg, room, payment, complaint, notification, review
-│   ├── middleware/     ← JWT auth, validation, rate limiting, error handling
-│   ├── models/         ← User, PG, Room, Payment, Complaint, Notification, Review
-│   ├── routes/         ← one file per feature
-│   ├── utils/          ← helpers, email templates, cron jobs
-│   ├── tests/          ← automated tests (run with: npm test)
-│   ├── .env.example    ← copy this to .env
+│   ├── controllers/    ← one file per feature area (see list below)
+│   ├── middleware/     ← JWT auth, owner/admin guards, validation, rate limiting
+│   ├── models/         ← Mongoose schemas — one per collection
+│   ├── routes/         ← one file per feature, mounted in app.js
+│   ├── utils/          ← helpers: email templates, OTP, activity log, cron jobs
+│   ├── tests/          ← Jest + Supertest (run with: npm test)
+│   ├── .env.example
 │   ├── server.js       ← entry point
 │   └── seed.js         ← demo data
 │
 └── frontend/
     ├── src/
-    │   ├── components/ ← shared UI components
-    │   ├── layouts/    ← owner and resident sidebar layouts
-    │   ├── pages/      ← all screens
-    │   └── services/   ← API calls
-    ├── .env.example    ← copy this to .env
+    │   ├── components/ ← shared UI (search bar, theme toggle, uploaders, etc.)
+    │   ├── layouts/     ← Owner / Resident / Admin shell layouts
+    │   ├── pages/        ← all screens, split into owner/ and resident/
+    │   └── services/    ← one API client module per feature
+    ├── .env.example
     └── vite.config.js
 ```
 
 ---
 
-## 6. Features at a glance
+## 6. Full feature list
 
-**Owner can:**
-- Create PGs with photos, amenities, rules
-- Add and manage rooms
-- Assign residents by email (even if they haven't signed up yet)
-- Generate monthly rent records with one click
-- Record cash/UPI payments offline
-- View revenue analytics (last 6 months chart)
-- Track and respond to complaints
+**Landing & browsing**
+- Hero search, popular filters (city, locality, rent, gender, sharing, amenities), sort (price/rating/newest), pagination
 
-**Resident can:**
-- Browse and search PGs by city, budget, amenities
-- Pay rent online via Razorpay (UPI, card, netbanking)
-- Download PDF receipts
-- Raise complaints with priority levels
-- Leave star ratings and reviews for their PG
-- Upload ID proof and profile photo
-- Get in-app notifications for all key events
+**Authentication**
+- Email + password, Google Sign-In, and no-password **mobile OTP login** for both owners and residents
+
+**Owner tools**
+- PG CRUD with photos, amenities, rules, archive/unarchive
+- Room management (capacity, rent, type, status)
+- Resident allocation by email **or** self-service **QR invite** (spec §7)
+- Rent generation, 3-way **payment approvals** (Razorpay auto / UPI screenshot / cash claim)
+- Complaints with category, photos, and staff assignment
+- **Announcements** broadcast to all current residents (in-app + email)
+- **Staff management** with attendance tracking
+- **Visitor management** — resident invites, owner approval, QR entry/exit logging
+- **Expense tracking** by category with monthly totals
+- **Inventory** tracking with repair history
+- **Reports** — PDF and Excel export (revenue, occupancy, payments, residents, complaints)
+- **Activity log** — full audit trail of every owner-side action
+- **Global search** across residents, PGs, rooms, complaints, payments
+- Payment settings (enable/disable Razorpay/UPI/Cash, UPI ID with auto-generated QR)
+- Business profile settings (logo, bank details, GST)
+
+**Resident tools**
+- Dashboard, room & roommates view, ID/document verification, documents (rental agreement, police verification)
+- Pay rent 3 ways: Smart PG (Razorpay, auto-verified), Direct UPI (screenshot + owner approval), Cash (claim + owner approval)
+- Downloadable PDF receipts
+- Complaints with photos and category
+- Announcements feed
+- Invite visitors with a QR code
+
+**Platform admin (minimal, per spec's "Future" note)**
+- Read-only platform stats, owner list with suspend/reactivate, all-PGs view
+
+**Cross-cutting**
+- Light/dark theme toggle
+- In-app notifications for every event (payment, complaint, announcement, visitor, allocation, review)
 
 ---
 
@@ -198,7 +188,7 @@ smart-pg/
 # Backend
 npm run dev      # start with hot reload (nodemon)
 npm run seed     # populate demo data
-npm test         # run automated tests
+npm test         # run automated tests (Jest + in-memory MongoDB)
 
 # Frontend
 npm run dev      # start Vite dev server
@@ -209,14 +199,10 @@ npm run build    # build for production (output: frontend/dist/)
 
 ## 8. Common issues
 
-**MongoDB connection failed**
-Make sure MongoDB is running. On most systems: `mongod` or start it from MongoDB Compass.
+**MongoDB connection failed** — make sure MongoDB is running (`mongod` or via MongoDB Compass).
 
-**Port already in use**
-Backend uses port 5000, frontend uses 5173. Kill whatever is on those ports or change `PORT=` in `backend/.env`.
+**Port already in use** — backend uses 5000, frontend uses 5173. Kill the process or change `PORT=` in `backend/.env`.
 
-**"Razorpay not configured" error**
-Add `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to `backend/.env` and `VITE_RAZORPAY_KEY_ID` to `frontend/.env`.
+**"Payment gateway is not configured" error** — only affects the Smart PG (Razorpay) method; Direct UPI and Cash work without it.
 
-**Google button not showing**
-Add `VITE_GOOGLE_CLIENT_ID` to `frontend/.env` and make sure `http://localhost:5173` is in your Google OAuth app's authorized origins.
+**OTP not arriving** — no SMS gateway is wired up in this build; the code is printed to the backend terminal and returned as `devHint` in dev mode.

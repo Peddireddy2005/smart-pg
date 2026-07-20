@@ -6,20 +6,23 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const logger = require("../config/logger");
 const { uploadBuffer, deleteImage } = require("../config/cloudinary");
+const { logActivity } = require("../utils/activityLog");
 
 const createPG = asyncHandler(async (req, res) => {
   logger.info(`[CREATE PG] ${req.user.email} ${req.body.name}`);
   const pg = await PG.create({ ...req.body, owner: req.user._id });
   logger.info(`[CREATE PG] Created: ${pg._id} ${pg.name}`);
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "PG Created", entityType: "PG", entityId: pg._id, details: pg.name });
   res.status(201).json(pg);
 });
 
 const getAllPGs = asyncHandler(async (req, res) => {
-  const { city, locality, search, minRent, maxRent } = req.query;
+  const { city, locality, search, minRent, maxRent, gender, food, ac, parking, wifi, laundry, sharing } = req.query;
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(50, Number(req.query.limit) || 12);
+  const sort = req.query.sort || "newest";
 
-  const filter = { isActive: true };
+  const filter = { isActive: true, isArchived: { $ne: true } };
   if (city) filter.city = new RegExp(city, "i");
   if (locality) filter.locality = new RegExp(locality, "i");
   if (search) {
@@ -34,11 +37,25 @@ const getAllPGs = asyncHandler(async (req, res) => {
     if (minRent) filter["rentRange.min"].$gte = Number(minRent);
     if (maxRent) filter["rentRange.min"].$lte = Number(maxRent);
   }
+  if (gender) filter.gender = gender;
+  if (food) filter.hasFood = true;
+  if (ac) filter.hasAC = true;
+  if (parking) filter.hasParking = true;
+  if (wifi) filter.hasWifi = true;
+  if (laundry) filter.hasLaundry = true;
+  if (sharing) filter.sharingTypes = sharing;
+
+  const sortMap = {
+    newest: { createdAt: -1 },
+    low_price: { "rentRange.min": 1 },
+    high_price: { "rentRange.min": -1 },
+    rating: { ratingsAverage: -1 },
+  };
 
   const [pgs, total] = await Promise.all([
     PG.find(filter)
       .populate("owner", "name email phone")
-      .sort({ createdAt: -1 })
+      .sort(sortMap[sort] || sortMap.newest)
       .skip((page - 1) * limit)
       .limit(limit),
     PG.countDocuments(filter),
@@ -97,11 +114,21 @@ const updatePG = asyncHandler(async (req, res) => {
   if (!pg) throw new AppError("PG not found", 404);
   assertOwnership(pg, req.user._id);
 
-  // Prevent clients from overwriting protected fields directly via this endpoint.
   const { owner, images, ratingsAverage, ratingsCount, ...safeUpdates } = req.body;
   const updated = await PG.findByIdAndUpdate(req.params.id, safeUpdates, { new: true, runValidators: true });
   logger.info(`[UPDATE PG] ${pg.name}`);
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "PG Updated", entityType: "PG", entityId: pg._id, details: pg.name });
   res.json(updated);
+});
+
+const archivePG = asyncHandler(async (req, res) => {
+  const pg = await PG.findById(req.params.id);
+  if (!pg) throw new AppError("PG not found", 404);
+  assertOwnership(pg, req.user._id);
+  pg.isArchived = !pg.isArchived;
+  await pg.save();
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: pg.isArchived ? "PG Archived" : "PG Unarchived", entityType: "PG", entityId: pg._id, details: pg.name });
+  res.json(pg);
 });
 
 const deletePG = asyncHandler(async (req, res) => {
@@ -112,6 +139,7 @@ const deletePG = asyncHandler(async (req, res) => {
   await Promise.all((pg.images || []).map((img) => deleteImage(img.publicId)));
   await pg.deleteOne();
   logger.info(`[DELETE PG] ${pg.name}`);
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "PG Deleted", entityType: "PG", entityId: pg._id, details: pg.name });
   res.json({ message: "PG deleted" });
 });
 
@@ -152,6 +180,8 @@ const getOwnerStats = asyncHandler(async (req, res) => {
   const pgIds = pgs.map((p) => p._id);
   const rooms = await Room.find({ pg: { $in: pgIds } });
   const totalResidents = rooms.reduce((sum, r) => sum + r.occupancy, 0);
+  const totalCapacity = rooms.reduce((sum, r) => sum + r.capacity, 0);
+  const occupancyPct = totalCapacity > 0 ? Math.round((totalResidents / totalCapacity) * 100) : 0;
   const now = new Date();
   const pendingPayments = await Payment.countDocuments({
     pg: { $in: pgIds }, status: "pending",
@@ -160,11 +190,18 @@ const getOwnerStats = asyncHandler(async (req, res) => {
   const openComplaints = await Complaint.countDocuments({
     pg: { $in: pgIds }, status: { $in: ["pending", "in-progress"] },
   });
-  const stats = { totalPGs: pgs.length, totalRooms: rooms.length, totalResidents, pendingPayments, openComplaints };
+  const paidThisMonth = await Payment.find({
+    pg: { $in: pgIds }, status: "paid",
+    month: now.getMonth() + 1, year: now.getFullYear(),
+  });
+  const revenue = paidThisMonth.reduce((s, p) => s + p.amount, 0);
+  const stats = {
+    totalPGs: pgs.length, totalRooms: rooms.length, totalResidents,
+    pendingPayments, openComplaints, occupancyPct, revenue,
+  };
   res.json(stats);
 });
 
-// Last 6 months of collected vs pending rent for the owner's PGs — powers the analytics chart.
 const getOwnerRevenueTrend = asyncHandler(async (req, res) => {
   const pgs = await PG.find({ owner: req.user._id });
   const pgIds = pgs.map((p) => p._id);
@@ -189,6 +226,6 @@ const getOwnerRevenueTrend = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  createPG, getAllPGs, getCities, getOwnerPGs, getPGById, updatePG, deletePG,
+  createPG, getAllPGs, getCities, getOwnerPGs, getPGById, updatePG, archivePG, deletePG,
   uploadPGImages, deletePGImage, getOwnerStats, getOwnerRevenueTrend,
 };

@@ -3,12 +3,6 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { googleAuth, saveSession } from "../services/authService";
 
-/**
- * Renders Google's official "Sign in with Google" button. Requires the
- * Google Identity Services script (loaded in index.html) and a configured
- * VITE_GOOGLE_CLIENT_ID. `role` is only used if this results in a brand new
- * account being created (existing accounts keep their original role).
- */
 export default function GoogleAuthButton({ role = "resident", text = "continue_with" }) {
   const ref = useRef(null);
   const navigate = useNavigate();

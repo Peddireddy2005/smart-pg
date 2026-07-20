@@ -24,6 +24,20 @@ const pgSchema = new mongoose.Schema(
     ratingsAverage: { type: Number, default: 0, min: 0, max: 5 },
     ratingsCount: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
+    isArchived: { type: Boolean, default: false },
+
+    gender: { type: String, enum: ["Male", "Female", "Co-ed", ""], default: "" },
+    sharingTypes: [{ type: String }],
+    hasFood: { type: Boolean, default: false },
+    hasAC: { type: Boolean, default: false },
+    hasParking: { type: Boolean, default: false },
+    hasWifi: { type: Boolean, default: false },
+    hasLaundry: { type: Boolean, default: false },
+
+    location: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
   },
   { timestamps: true }
 );

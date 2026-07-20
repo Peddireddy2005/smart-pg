@@ -19,15 +19,14 @@ const getPGReviews = asyncHandler(async (req, res) => {
   res.json(reviews);
 });
 
-// Creates the resident's review, or updates it if they've already reviewed this PG.
 const upsertReview = asyncHandler(async (req, res) => {
-  const { rating, comment } = req.body;
+  const { rating, comment, photos } = req.body;
   const pg = await PG.findById(req.params.pgId);
   if (!pg) throw new AppError("PG not found", 404);
 
   const review = await Review.findOneAndUpdate(
     { pg: req.params.pgId, resident: req.user._id },
-    { rating, comment },
+    { rating, comment, ...(photos !== undefined && { photos }) },
     { new: true, upsert: true, runValidators: true }
   );
 
@@ -47,4 +46,16 @@ const deleteReview = asyncHandler(async (req, res) => {
   res.json({ message: "Review deleted" });
 });
 
-module.exports = { getPGReviews, upsertReview, deleteReview };
+// Owner: reply publicly to a resident's review (spec §23 — "Owner Reply").
+const replyToReview = asyncHandler(async (req, res) => {
+  const { reply } = req.body;
+  const review = await Review.findById(req.params.id).populate("pg");
+  if (!review) throw new AppError("Review not found", 404);
+  if (review.pg.owner.toString() !== req.user._id.toString()) throw new AppError("Not authorized", 403);
+
+  review.ownerReply = reply;
+  await review.save();
+  res.json(review);
+});
+
+module.exports = { getPGReviews, upsertReview, deleteReview, replyToReview };

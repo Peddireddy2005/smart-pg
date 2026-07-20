@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getSession, clearSession } from "../services/authService";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -14,8 +15,7 @@ export default function Navbar() {
     return () => window.removeEventListener("storage", sync);
   }, [location.pathname]);
 
-  // Hide inside dashboard layouts
-  if (location.pathname.startsWith("/owner") || location.pathname.startsWith("/resident")) {
+  if (location.pathname.startsWith("/owner") || location.pathname.startsWith("/resident") || location.pathname.startsWith("/admin")) {
     return null;
   }
 
@@ -27,25 +27,27 @@ export default function Navbar() {
 
   const openDashboard = () => {
     if (!user) return navigate("/login");
-    navigate(user.role === "owner" ? "/owner/dashboard" : "/resident/dashboard");
+    navigate(user.role === "owner" ? "/owner/dashboard" : user.role === "admin" ? "/admin/dashboard" : "/resident/dashboard");
   };
 
   return (
-    <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <nav className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-brand-500 text-white flex items-center justify-center font-bold text-sm">S</div>
-          <span className="font-heading text-xl font-bold text-slate-900">Smart PG</span>
+          <span className="font-heading text-xl font-bold text-slate-900 dark:text-white">Smart PG</span>
         </Link>
 
         <div className="flex items-center gap-4">
-          <Link to="/pgs" className="text-slate-600 hover:text-brand-500 font-medium text-sm hidden sm:block">
+          <Link to="/pgs" className="text-slate-600 dark:text-slate-300 hover:text-brand-500 font-medium text-sm hidden sm:block">
             Browse PGs
           </Link>
 
+          <ThemeToggle dark={false} />
+
           {!user ? (
             <>
-              <Link to="/login" className="text-slate-600 hover:text-brand-500 font-medium text-sm">Login</Link>
+              <Link to="/login" className="text-slate-600 dark:text-slate-300 hover:text-brand-500 font-medium text-sm">Login</Link>
               <Link to="/signup" className="btn-primary text-sm py-2 px-4">Get Started</Link>
             </>
           ) : (

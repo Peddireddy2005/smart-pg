@@ -10,6 +10,7 @@ const roomSchema = new mongoose.Schema(
     residents: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     floor: { type: String, default: "" },
     type: { type: String, enum: ["Single", "Double", "Triple", "Dormitory", ""], default: "" },
+    status: { type: String, enum: ["available", "occupied", "maintenance"], default: "available" },
   },
   { timestamps: true }
 );

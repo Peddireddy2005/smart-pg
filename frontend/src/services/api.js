@@ -9,8 +9,6 @@ api.interceptors.request.use((config) => {
 });
 
 let onUnauthorized = null;
-// Allows App.jsx to register a callback (e.g. clear storage + redirect to
-// /login) without this module needing to import react-router directly.
 export const setUnauthorizedHandler = (fn) => {
   onUnauthorized = fn;
 };

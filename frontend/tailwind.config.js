@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: "class",
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
@@ -14,7 +15,7 @@ export default {
           200: "#ffc490",
           300: "#ff9f55",
           400: "#ff8022",
-          500: "#ff7a09",  // primary orange
+          500: "#ff7a09",
           600: "#f05e06",
           700: "#c74307",
           800: "#9e350e",

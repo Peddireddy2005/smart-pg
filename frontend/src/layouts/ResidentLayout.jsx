@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import NotificationBell from "../components/NotificationBell";
+import ThemeToggle from "../components/ThemeToggle";
 import { clearSession, getSession } from "../services/authService";
 
 const links = [
@@ -8,6 +9,8 @@ const links = [
   { to: "/resident/room", icon: "🏠", label: "My Room" },
   { to: "/resident/payments", icon: "₹", label: "Rent" },
   { to: "/resident/complaints", icon: "⚑", label: "Complaints" },
+  { to: "/resident/announcements", icon: "📣", label: "Announcements" },
+  { to: "/resident/visitors", icon: "🚪", label: "Visitors" },
   { to: "/resident/profile", icon: "◉", label: "My Profile" },
 ];
 
@@ -22,7 +25,7 @@ export default function ResidentLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8f7f4]">
+    <div className="flex h-screen overflow-hidden bg-[#f8f7f4] dark:bg-slate-900">
       <aside className={`${collapsed ? "w-16" : "w-60"} bg-slate-950 flex flex-col transition-all duration-300 shrink-0`}>
         <div className="px-4 py-5 border-b border-white/10 flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-sm shrink-0">S</div>
@@ -70,7 +73,8 @@ export default function ResidentLayout() {
       </aside>
 
       <main className="flex-1 overflow-y-auto">
-        <div className="flex items-center justify-end px-6 md:px-8 py-3 border-b border-gray-100 bg-white">
+        <div className="flex items-center justify-end gap-2 px-6 md:px-8 py-3 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <ThemeToggle dark={false} />
           <NotificationBell dark={false} />
         </div>
         <div className="p-6 md:p-8 page-fade">

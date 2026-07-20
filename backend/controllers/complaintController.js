@@ -1,19 +1,28 @@
 const Complaint = require("../models/Complaint");
 const User = require("../models/User");
 const PG = require("../models/PG");
+const Staff = require("../models/Staff");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const logger = require("../config/logger");
 const { notify } = require("../utils/notify");
 const { sendEmail, templates } = require("../utils/sendEmail");
+const { uploadBuffer } = require("../config/cloudinary");
+const { logActivity } = require("../utils/activityLog");
 
 const createComplaint = asyncHandler(async (req, res) => {
-  const { title, description, priority } = req.body;
+  const { title, description, priority, category } = req.body;
   const user = await User.findById(req.user._id);
   if (!user.assignedPG) throw new AppError("You are not assigned to any PG", 400);
 
+  let images = [];
+  if (req.files?.length) {
+    const uploaded = await Promise.all(req.files.map((f) => uploadBuffer(f.buffer, "smart-pg/complaints")));
+    images = uploaded.map((u) => ({ url: u.url, publicId: u.publicId }));
+  }
+
   const complaint = await Complaint.create({
-    title, description, priority,
+    title, description, priority, category, images,
     pg: user.assignedPG, room: user.assignedRoom, resident: req.user._id,
   });
 
@@ -34,7 +43,9 @@ const createComplaint = asyncHandler(async (req, res) => {
 
 const getMyComplaints = asyncHandler(async (req, res) => {
   const complaints = await Complaint.find({ resident: req.user._id })
-    .populate("pg", "name").populate("room", "roomNumber").sort({ createdAt: -1 });
+    .populate("pg", "name").populate("room", "roomNumber")
+    .populate("assignedStaff", "name role phone")
+    .sort({ createdAt: -1 });
   res.json(complaints);
 });
 
@@ -45,6 +56,7 @@ const getOwnerComplaints = asyncHandler(async (req, res) => {
     .populate("resident", "name email photoUrl")
     .populate("room", "roomNumber")
     .populate("pg", "name")
+    .populate("assignedStaff", "name role phone")
     .sort({ createdAt: -1 });
   res.json(complaints);
 });
@@ -53,36 +65,75 @@ const getPGComplaints = asyncHandler(async (req, res) => {
   const complaints = await Complaint.find({ pg: req.params.pgId })
     .populate("resident", "name email photoUrl")
     .populate("room", "roomNumber")
+    .populate("assignedStaff", "name role phone")
     .sort({ createdAt: -1 });
   res.json(complaints);
 });
 
 const updateComplaintStatus = asyncHandler(async (req, res) => {
-  const { status, ownerNote } = req.body;
-  const update = { status };
+  const { status, ownerNote, assignedStaff } = req.body;
+  const update = {};
+  if (status !== undefined) update.status = status;
   if (ownerNote !== undefined) update.ownerNote = ownerNote;
+  if (assignedStaff !== undefined) update.assignedStaff = assignedStaff || null;
 
   const complaint = await Complaint.findByIdAndUpdate(req.params.id, update, { new: true })
     .populate("resident", "name email photoUrl")
     .populate("room", "roomNumber")
-    .populate("pg", "name");
+    .populate("pg", "name")
+    .populate("assignedStaff", "name role phone");
   if (!complaint) throw new AppError("Complaint not found", 404);
 
-  await notify({
-    user: complaint.resident._id,
-    title: "Complaint Updated",
-    message: `Your complaint "${complaint.title}" is now ${status}.`,
-    type: "complaint",
-    link: "/resident/complaints",
-  });
-  sendEmail({
-    to: complaint.resident.email,
-    subject: "Complaint Status Updated",
-    html: templates.complaintUpdate(complaint.resident.name, complaint.title, status),
-  });
+  if (status !== undefined) {
+    await notify({
+      user: complaint.resident._id,
+      title: "Complaint Updated",
+      message: `Your complaint "${complaint.title}" is now ${status}.`,
+      type: "complaint",
+      link: "/resident/complaints",
+    });
+    sendEmail({
+      to: complaint.resident.email,
+      subject: "Complaint Status Updated",
+      html: templates.complaintUpdate(complaint.resident.name, complaint.title, status),
+    });
+  }
+
+  const pg = await PG.findById(complaint.pg._id);
+  await logActivity({ owner: pg.owner, actor: req.user._id, action: "Complaint Updated", entityType: "Complaint", entityId: complaint._id, details: `${complaint.title} -> ${status || complaint.status}` });
 
   logger.info(`[UPDATE COMPLAINT] ${req.params.id} -> ${status}`);
   res.json(complaint);
 });
 
-module.exports = { createComplaint, getMyComplaints, getOwnerComplaints, getPGComplaints, updateComplaintStatus };
+// Owner: assign in-house staff to handle a complaint (spec §9 workflow: Complaint -> Owner -> Assign -> Resolved -> Closed)
+const assignComplaintStaff = asyncHandler(async (req, res) => {
+  const { staffId } = req.body;
+  const complaint = await Complaint.findById(req.params.id).populate("pg").populate("resident", "name email");
+  if (!complaint) throw new AppError("Complaint not found", 404);
+  if (complaint.pg.owner.toString() !== req.user._id.toString()) throw new AppError("Not authorized", 403);
+
+  if (staffId) {
+    const staff = await Staff.findById(staffId);
+    if (!staff) throw new AppError("Staff member not found", 404);
+    complaint.assignedStaff = staffId;
+    complaint.status = "in-progress";
+  } else {
+    complaint.assignedStaff = null;
+  }
+  await complaint.save();
+
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Complaint Assigned", entityType: "Complaint", entityId: complaint._id, details: complaint.title });
+
+  const populated = await Complaint.findById(complaint._id)
+    .populate("resident", "name email photoUrl")
+    .populate("room", "roomNumber")
+    .populate("pg", "name")
+    .populate("assignedStaff", "name role phone");
+  res.json(populated);
+});
+
+module.exports = {
+  createComplaint, getMyComplaints, getOwnerComplaints, getPGComplaints,
+  updateComplaintStatus, assignComplaintStaff,
+};

@@ -25,9 +25,6 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Optional auth — attaches req.user if a valid token is present, but doesn't
-// block the request if it's missing/invalid. Useful for public endpoints
-// that personalize output when logged in (e.g. PG listing "is this mine?").
 const optionalAuth = async (req, res, next) => {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer")) return next();

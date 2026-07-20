@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+import { Link } from "react-router-dom";
 import api from "../../services/api";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -26,39 +27,40 @@ export default function OwnerAnalytics() {
     ? Math.round((totalCollected / (totalCollected + totalPending)) * 100)
     : 0;
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full" /></div>;
-  }
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full" /></div>;
 
   return (
     <div>
-      <h1 className="font-heading text-3xl font-bold text-slate-900 mb-6">Analytics</h1>
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+        <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white">Analytics</h1>
+        <Link to="/owner/reports" className="btn-secondary text-sm">📄 Download Reports</Link>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="card p-4 bg-emerald-50 border-0">
+        <div className="card p-4 bg-emerald-50 dark:bg-emerald-900/20 border-0">
           <p className="text-2xl mb-1">💰</p>
           <p className="font-heading text-xl font-bold text-emerald-600">₹{totalCollected.toLocaleString()}</p>
-          <p className="text-slate-500 text-xs mt-1">Collected (6 mo)</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">Collected (6 mo)</p>
         </div>
-        <div className="card p-4 bg-amber-50 border-0">
+        <div className="card p-4 bg-amber-50 dark:bg-amber-900/20 border-0">
           <p className="text-2xl mb-1">⏳</p>
           <p className="font-heading text-xl font-bold text-amber-600">₹{totalPending.toLocaleString()}</p>
-          <p className="text-slate-500 text-xs mt-1">Pending (6 mo)</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">Pending (6 mo)</p>
         </div>
-        <div className="card p-4 bg-blue-50 border-0">
+        <div className="card p-4 bg-blue-50 dark:bg-blue-900/20 border-0">
           <p className="text-2xl mb-1">📈</p>
           <p className="font-heading text-xl font-bold text-blue-600">{collectionRate}%</p>
-          <p className="text-slate-500 text-xs mt-1">Collection Rate</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">Collection Rate</p>
         </div>
-        <div className="card p-4 bg-brand-50 border-0">
+        <div className="card p-4 bg-brand-50 dark:bg-brand-900/20 border-0">
           <p className="text-2xl mb-1">🏘️</p>
           <p className="font-heading text-xl font-bold text-brand-600">{stats?.totalResidents ?? 0}</p>
-          <p className="text-slate-500 text-xs mt-1">Active Residents</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">Active Residents</p>
         </div>
       </div>
 
       <div className="card p-6">
-        <h2 className="font-heading font-semibold text-slate-800 mb-4">Revenue — Last 6 Months</h2>
+        <h2 className="font-heading font-semibold text-slate-800 dark:text-white mb-4">Revenue — Last 6 Months</h2>
         {trend.every((t) => t.collected === 0 && t.pending === 0) ? (
           <p className="text-slate-400 text-sm py-12 text-center">No payment data yet. Generate rent for a month to see trends here.</p>
         ) : (

@@ -1,10 +1,6 @@
 const { getTransporter, isConfigured } = require("../config/mailer");
 const logger = require("../config/logger");
 
-/**
- * Sends an email. Silently skips (and logs) if SMTP is not configured so the
- * app keeps working in environments without email set up (e.g. local dev).
- */
 const sendEmail = async ({ to, subject, html, text }) => {
   if (!isConfigured()) {
     logger.warn(`[EMAIL] SMTP not configured — skipping email to ${to} (${subject})`);
@@ -44,6 +40,13 @@ const templates = {
       <h2 style="color:#d97706">Rent Due Reminder</h2>
       <p>Hi ${name}, your rent of <strong>₹${amount.toLocaleString()}</strong> for <strong>${month}/${year}</strong> is pending. Please pay at your earliest convenience.</p>
     </div>`,
+  otpVerification: (name, code) => `
+    <div style="font-family:sans-serif;max-width:480px;margin:auto">
+      <h2 style="color:#ff7a09">Verify your email</h2>
+      <p>Hi ${name}, use the code below to verify your Smart PG account. It expires in ${process.env.OTP_EXPIRE_MIN || 5} minutes.</p>
+      <p style="font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;background:#f8f7f4;padding:16px;border-radius:12px;color:#111">${code}</p>
+      <p>If you didn't create a Smart PG account, you can safely ignore this email.</p>
+    </div>`,
   resetPassword: (name, resetUrl) => `
     <div style="font-family:sans-serif;max-width:480px;margin:auto">
       <h2 style="color:#ff7a09">Password Reset Request</h2>
@@ -55,6 +58,12 @@ const templates = {
     <div style="font-family:sans-serif;max-width:480px;margin:auto">
       <h2 style="color:#2563eb">Complaint Update</h2>
       <p>Hi ${name}, your complaint "<strong>${title}</strong>" status was updated to <strong>${status}</strong>.</p>
+    </div>`,
+  announcement: (name, title, message) => `
+    <div style="font-family:sans-serif;max-width:480px;margin:auto">
+      <h2 style="color:#7c3aed">📢 ${title}</h2>
+      <p>Hi ${name},</p>
+      <p>${message}</p>
     </div>`,
 };
 

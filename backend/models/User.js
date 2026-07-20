@@ -8,39 +8,58 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: function () {
-        // Password is only mandatory for locally-registered accounts.
-        // OAuth accounts (Google) authenticate via the provider instead.
         return this.authProvider === "local";
       },
     },
-    role: { type: String, enum: ["owner", "resident"], default: "resident" },
+    role: { type: String, enum: ["owner", "resident", "admin"], default: "resident" },
 
-    // Auth provider tracking — supports linking a Google sign-in to an
-    // account that may have also been created with a normal password.
     authProvider: { type: String, enum: ["local", "google"], default: "local" },
     googleId: { type: String, default: "", index: true },
 
-    // Profile fields (resident)
-    phone: { type: String, default: "" },
+    // Contact phone number (profile field only — not used for authentication)
+    phone: { type: String, default: "", index: true },
+
     emergencyContact: { type: String, default: "" },
     emergencyPhone: { type: String, default: "" },
     address: { type: String, default: "" },
     idProofType: { type: String, enum: ["Aadhaar", "PAN", "Passport", "Driving License", "Voter ID", ""], default: "" },
     idProofNumber: { type: String, default: "" },
 
-    // Image URLs (stored on Cloudinary, not base64 — keeps documents small and fast)
     photoUrl: { type: String, default: "" },
     idProofUrl: { type: String, default: "" },
+    rentalAgreementUrl: { type: String, default: "" },
+    policeVerificationUrl: { type: String, default: "" },
 
-    // Assignment (resident only)
+    // Owner-only business profile fields
+    businessName: { type: String, default: "" },
+    logoUrl: { type: String, default: "" },
+    upiId: { type: String, default: "" },
+    bankDetails: { type: String, default: "" },
+    gstNumber: { type: String, default: "" },
+
+    // Owner payment settings (spec: "Owner Payment Settings" — which
+    // methods residents are allowed to use to pay this owner).
+    paymentMethodsEnabled: {
+      razorpay: { type: Boolean, default: true },
+      upi: { type: Boolean, default: true },
+      cash: { type: Boolean, default: true },
+    },
+
+    // Preferences
+    theme: { type: String, enum: ["light", "dark"], default: "light" },
+
+    occupation: { type: String, default: "" },
+    college: { type: String, default: "" },
+    company: { type: String, default: "" },
+
     assignedPG: { type: mongoose.Schema.Types.ObjectId, ref: "PG", default: null },
     assignedRoom: { type: mongoose.Schema.Types.ObjectId, ref: "Room", default: null },
+    moveInDate: { type: Date },
+    moveOutDate: { type: Date },
 
-    // For unregistered/invited residents
     isVerified: { type: Boolean, default: false },
     invitedByOwner: { type: Boolean, default: false },
 
-    // Password reset
     resetPasswordToken: { type: String, select: false },
     resetPasswordExpire: { type: Date, select: false },
 

@@ -10,8 +10,6 @@ const connectDB = async () => {
     logger.info(`[DB] Connected: ${conn.connection.host}`);
   } catch (error) {
     logger.error(`[DB] Connection FAILED: ${error.message}`);
-    // Retry once after a short delay instead of crashing immediately —
-    // useful in containerized environments where Mongo may start slightly later.
     setTimeout(() => {
       logger.info("[DB] Retrying connection...");
       mongoose

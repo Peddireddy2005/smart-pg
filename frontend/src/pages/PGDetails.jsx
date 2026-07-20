@@ -28,7 +28,7 @@ export default function PGDetails() {
       setRooms(r.data);
       setReviews(rev);
       if (user) {
-        const mine = rev.find((r) => r.resident?._id === user._id);
+        const mine = rev.find((r2) => r2.resident?._id === user._id);
         if (mine) { setMyRating(mine.rating); setMyComment(mine.comment || ""); }
       }
     }).finally(() => setLoading(false));
@@ -65,29 +65,27 @@ export default function PGDetails() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#f8f7f4] flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full" /></div>;
+  if (loading) return <div className="min-h-screen bg-[#f8f7f4] dark:bg-slate-900 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full" /></div>;
   if (!pg) return <div className="p-8 text-red-500">PG not found</div>;
 
   const available = rooms.filter((r) => r.occupancy < r.capacity).length;
   const images = pg.images || [];
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4]">
-      <div className="bg-white border-b px-6 py-4 flex items-center gap-4">
-        <Link to="/pgs" className="text-slate-500 hover:text-slate-800 text-sm">← Back</Link>
-        <span className="text-slate-300">|</span>
+    <div className="min-h-screen bg-[#f8f7f4] dark:bg-slate-900">
+      <div className="bg-white dark:bg-slate-800 border-b dark:border-slate-700 px-6 py-4 flex items-center gap-4">
+        <Link to="/pgs" className="text-slate-500 dark:text-slate-400 hover:text-slate-800 text-sm">← Back</Link>
+        <span className="text-slate-300 dark:text-slate-600">|</span>
         <Link to="/" className="flex items-center gap-2">
           <div className="w-6 h-6 bg-brand-500 rounded flex items-center justify-center text-white font-bold text-xs">S</div>
-          <span className="font-heading font-bold text-slate-900">Smart PG</span>
+          <span className="font-heading font-bold text-slate-900 dark:text-white">Smart PG</span>
         </Link>
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-8">
-        {/* Image Gallery */}
         {images.length > 0 ? (
           <div className="mb-6">
-            <img src={images[imgIdx].url} alt={pg.name}
-              className="w-full h-72 object-cover rounded-2xl border border-gray-100 mb-2" />
+            <img src={images[imgIdx].url} alt={pg.name} className="w-full h-72 object-cover rounded-2xl border border-gray-100 dark:border-slate-700 mb-2" />
             {images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {images.map((img, i) => (
@@ -100,20 +98,19 @@ export default function PGDetails() {
             )}
           </div>
         ) : (
-          <div className="w-full h-48 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center text-6xl mb-6">🏠</div>
+          <div className="w-full h-48 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-2xl flex items-center justify-center text-6xl mb-6">🏠</div>
         )}
 
-        {/* PG Info */}
         <div className="card p-6 mb-6">
           <div className="flex justify-between items-start mb-4 flex-wrap gap-3">
             <div>
-              <h1 className="font-heading text-3xl font-bold text-slate-900">{pg.name}</h1>
-              <p className="text-slate-500 mt-1">📍 {pg.locality ? `${pg.locality}, ` : ""}{pg.city}</p>
+              <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white">{pg.name}</h1>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">📍 {pg.locality ? `${pg.locality}, ` : ""}{pg.city}</p>
               <p className="text-slate-400 text-sm">{pg.address}</p>
               {pg.ratingsCount > 0 && (
                 <div className="flex items-center gap-2 mt-2">
                   <StarRating value={Math.round(pg.ratingsAverage)} readOnly />
-                  <span className="text-sm text-slate-500">{pg.ratingsAverage} ({pg.ratingsCount} reviews)</span>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">{pg.ratingsAverage} ({pg.ratingsCount} reviews)</span>
                 </div>
               )}
             </div>
@@ -122,11 +119,11 @@ export default function PGDetails() {
             </span>
           </div>
 
-          {pg.description && <p className="text-slate-600 text-sm leading-relaxed mb-4">{pg.description}</p>}
+          {pg.description && <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4">{pg.description}</p>}
 
           {pg.amenities?.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {pg.amenities.map((a, i) => <span key={i} className="bg-slate-100 text-slate-600 text-sm px-3 py-1 rounded-xl">{a}</span>)}
+              {pg.amenities.map((a, i) => <span key={i} className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm px-3 py-1 rounded-xl">{a}</span>)}
             </div>
           )}
 
@@ -134,17 +131,16 @@ export default function PGDetails() {
             <p className="font-heading text-xl font-bold text-brand-500">Starting ₹{pg.rentRange.min.toLocaleString()}/month</p>
           )}
 
-          {pg.contactPhone && <p className="text-slate-500 text-sm mt-2">📞 {pg.contactPhone}</p>}
+          {pg.contactPhone && <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">📞 {pg.contactPhone}</p>}
 
           {pg.rules && (
-            <div className="mt-3 bg-amber-50 rounded-xl p-3 text-sm text-amber-700">
+            <div className="mt-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 text-sm text-amber-700 dark:text-amber-300">
               📋 <strong>Rules:</strong> {pg.rules}
             </div>
           )}
         </div>
 
-        {/* Rooms */}
-        <h2 className="font-heading font-bold text-xl text-slate-900 mb-4">Rooms</h2>
+        <h2 className="font-heading font-bold text-xl text-slate-900 dark:text-white mb-4">Rooms</h2>
         {rooms.length === 0 ? (
           <p className="text-slate-400 mb-8">No rooms listed yet.</p>
         ) : (
@@ -154,11 +150,11 @@ export default function PGDetails() {
               return (
                 <div key={room._id} className={`card p-4 ${avail === 0 ? "opacity-60" : ""}`}>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-heading font-semibold text-slate-900">Room {room.roomNumber}</span>
+                    <span className="font-heading font-semibold text-slate-900 dark:text-white">Room {room.roomNumber}</span>
                     <span className={avail === 0 ? "badge-red" : "badge-green"}>{avail === 0 ? "Full" : "Open"}</span>
                   </div>
                   {room.type && <p className="text-xs text-slate-400 mb-1">{room.type}</p>}
-                  <p className="text-sm text-slate-500">Beds: {room.occupancy}/{room.capacity}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Beds: {room.occupancy}/{room.capacity}</p>
                   <p className="font-heading font-bold text-brand-500 mt-2">
                     ₹{room.rent.toLocaleString()}<span className="text-xs font-normal text-slate-400">/mo</span>
                   </p>
@@ -168,7 +164,6 @@ export default function PGDetails() {
           </div>
         )}
 
-        {/* CTA */}
         <div className="card p-5 bg-gradient-to-r from-brand-500 to-brand-600 border-0 text-white text-center mb-8">
           <p className="font-heading font-bold text-lg mb-1">Interested in this PG?</p>
           <p className="text-orange-100 text-sm mb-4">Create an account to connect with the owner.</p>
@@ -177,25 +172,18 @@ export default function PGDetails() {
           </Link>
         </div>
 
-        {/* Reviews */}
-        <h2 className="font-heading font-bold text-xl text-slate-900 mb-4">
-          Reviews ({reviews.length})
-        </h2>
+        <h2 className="font-heading font-bold text-xl text-slate-900 dark:text-white mb-4">Reviews ({reviews.length})</h2>
 
         {user && user.role === "resident" && (
           <form onSubmit={handleSubmitReview} className="card p-5 mb-5">
-            <p className="font-heading font-semibold text-slate-800 mb-3">
+            <p className="font-heading font-semibold text-slate-800 dark:text-white mb-3">
               {reviews.find((r) => r.resident?._id === user._id) ? "Update your review" : "Write a review"}
             </p>
             <div className="mb-3">
               <StarRating value={myRating} onChange={setMyRating} size="text-2xl" />
             </div>
-            <textarea
-              className="input mb-3" rows={3}
-              placeholder="Share your experience (optional)..."
-              value={myComment}
-              onChange={(e) => setMyComment(e.target.value)}
-            />
+            <textarea className="input mb-3" rows={3} placeholder="Share your experience (optional)..."
+              value={myComment} onChange={(e) => setMyComment(e.target.value)} />
             <button disabled={submittingReview} className="btn-primary text-sm">
               {submittingReview ? "Submitting..." : "Submit Review"}
             </button>
@@ -211,20 +199,24 @@ export default function PGDetails() {
                 <div className="flex items-start gap-3">
                   {rev.resident?.photoUrl
                     ? <img src={rev.resident.photoUrl} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
-                    : <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-500 shrink-0">{rev.resident?.name?.charAt(0)}</div>
+                    : <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-500 shrink-0">{rev.resident?.name?.charAt(0)}</div>
                   }
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <p className="font-medium text-slate-800 text-sm">{rev.resident?.name || "Anonymous"}</p>
+                      <p className="font-medium text-slate-800 dark:text-white text-sm">{rev.resident?.name || "Anonymous"}</p>
                       <div className="flex items-center gap-2">
                         <StarRating value={rev.rating} readOnly size="text-sm" />
                         {user && rev.resident?._id === user._id && (
-                          <button onClick={() => handleDeleteReview(rev._id)}
-                            className="text-xs text-red-400 hover:text-red-600">Delete</button>
+                          <button onClick={() => handleDeleteReview(rev._id)} className="text-xs text-red-400 hover:text-red-600">Delete</button>
                         )}
                       </div>
                     </div>
-                    {rev.comment && <p className="text-slate-500 text-sm mt-1">{rev.comment}</p>}
+                    {rev.comment && <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{rev.comment}</p>}
+                    {rev.ownerReply && (
+                      <div className="mt-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-600 dark:text-slate-300">
+                        <span className="font-semibold">Owner reply:</span> {rev.ownerReply}
+                      </div>
+                    )}
                     <p className="text-xs text-slate-400 mt-1">{new Date(rev.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>

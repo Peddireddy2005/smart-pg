@@ -7,10 +7,10 @@ const notificationSchema = new mongoose.Schema(
     message: { type: String, required: true },
     type: {
       type: String,
-      enum: ["payment", "complaint", "allocation", "system", "review"],
+      enum: ["payment", "complaint", "allocation", "system", "review", "announcement", "visitor"],
       default: "system",
     },
-    link: { type: String, default: "" }, // frontend route to deep-link to, e.g. /resident/payments
+    link: { type: String, default: "" },
     isRead: { type: Boolean, default: false },
   },
   { timestamps: true }

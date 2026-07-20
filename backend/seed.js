@@ -1,6 +1,6 @@
 /**
- * Seeds the database with a demo owner, resident, PG, room and payment so
- * you can explore the app immediately after setup.
+ * Seeds the database with a demo owner, resident, admin, PG, room, staff,
+ * announcement and payment so you can explore the app immediately after setup.
  *
  * Usage: npm run seed
  */
@@ -13,14 +13,14 @@ const User = require("./models/User");
 const PG = require("./models/PG");
 const Room = require("./models/Room");
 const Payment = require("./models/Payment");
+const Staff = require("./models/Staff");
+const Announcement = require("./models/Announcement");
 
 const run = async () => {
   await mongoose.connect(process.env.MONGO_URI);
   console.log("Connected. Seeding...");
 
-  await Promise.all([
-    User.deleteMany({ email: { $in: ["owner@demo.com", "resident@demo.com"] } }),
-  ]);
+  await User.deleteMany({ email: { $in: ["owner@demo.com", "resident@demo.com", "admin@demo.com"] } });
 
   const passwordHash = await bcrypt.hash("password123", 10);
 
@@ -29,6 +29,15 @@ const run = async () => {
     email: "owner@demo.com",
     password: passwordHash,
     role: "owner",
+    isVerified: true,
+    businessName: "Demo PG Ventures",
+  });
+
+  await User.create({
+    name: "Demo Admin",
+    email: "admin@demo.com",
+    password: passwordHash,
+    role: "admin",
     isVerified: true,
   });
 
@@ -42,6 +51,8 @@ const run = async () => {
     contactPhone: "+91 98765 43210",
     rules: "No smoking. Gate closes at 11 PM.",
     owner: owner._id,
+    gender: "Male",
+    hasFood: true, hasAC: true, hasParking: true, hasWifi: true, hasLaundry: true,
   });
 
   const room = await Room.create({
@@ -63,6 +74,7 @@ const run = async () => {
     isVerified: true,
     assignedPG: pg._id,
     assignedRoom: room._id,
+    moveInDate: new Date(),
   });
 
   room.residents.push(resident._id);
@@ -81,9 +93,27 @@ const run = async () => {
     dueDate: new Date(now.getFullYear(), now.getMonth(), 5),
   });
 
+  await Staff.create({
+    pg: pg._id,
+    owner: owner._id,
+    name: "Ramesh Kumar",
+    role: "Cleaner",
+    phone: "+91 90000 11111",
+    salary: 12000,
+  });
+
+  await Announcement.create({
+    pg: pg._id,
+    owner: owner._id,
+    title: "Water Shutdown Tomorrow",
+    message: "Water supply will be unavailable from 10 AM to 2 PM tomorrow for tank cleaning.",
+    type: "Water Shutdown",
+  });
+
   console.log("Seed complete:");
   console.log("  Owner login:    owner@demo.com / password123");
   console.log("  Resident login: resident@demo.com / password123");
+  console.log("  Admin login:    admin@demo.com / password123");
 
   await mongoose.disconnect();
   process.exit(0);

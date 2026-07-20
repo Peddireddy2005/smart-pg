@@ -11,20 +11,14 @@ const { apiLimiter } = require("./middleware/rateLimiter");
 const { razorpayWebhook } = require("./controllers/paymentController");
 
 const app = express();
-app.set("trust proxy", 1); // correct client IPs / rate limiting behind a reverse proxy (Render, Nginx, etc.)
+app.set("trust proxy", 1);
 
-// --- Razorpay webhook -------------------------------------------------------
-// Registered BEFORE the global JSON parser below, with its own raw body
-// parser, so the HMAC signature can be verified against the exact bytes
-// Razorpay sent. Any other request simply falls through to the next
-// matching middleware/route as usual.
 app.post(
   "/api/payments/webhook",
   express.raw({ type: "application/json" }),
   razorpayWebhook
 );
 
-// --- Core security & utility middleware -------------------------------------
 app.use(helmet());
 app.use(compression());
 
@@ -45,7 +39,7 @@ app.use(
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-app.use(sanitizeRequest); // strips keys starting with `$` or containing `.` to prevent NoSQL injection
+app.use(sanitizeRequest);
 
 if (process.env.NODE_ENV !== "test") {
   app.use(
@@ -57,7 +51,6 @@ if (process.env.NODE_ENV !== "test") {
 
 app.use("/api", apiLimiter);
 
-// --- Health check (used by uptime monitors / container orchestrators) ------
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
@@ -66,11 +59,21 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/pg", require("./routes/pgRoutes"));
 app.use("/api/rooms", require("./routes/roomRoutes"));
+app.use("/api/invites", require("./routes/inviteRoutes"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/complaints", require("./routes/complaintRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
+app.use("/api/announcements", require("./routes/announcementRoutes"));
+app.use("/api/staff", require("./routes/staffRoutes"));
+app.use("/api/visitors", require("./routes/visitorRoutes"));
+app.use("/api/expenses", require("./routes/expenseRoutes"));
+app.use("/api/inventory", require("./routes/inventoryRoutes"));
+app.use("/api/activity-logs", require("./routes/activityLogRoutes"));
+app.use("/api/search", require("./routes/searchRoutes"));
+app.use("/api/reports", require("./routes/reportRoutes"));
+app.use("/api/admin", require("./routes/adminRoutes"));
 
 app.get("/", (req, res) => res.send("Smart PG Server Running ✅"));
 

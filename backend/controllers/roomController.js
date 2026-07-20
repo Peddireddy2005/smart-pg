@@ -5,6 +5,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const logger = require("../config/logger");
 const { notify } = require("../utils/notify");
+const { logActivity } = require("../utils/activityLog");
 
 const recalcRentRange = async (pgId) => {
   const allRooms = await Room.find({ pg: pgId });
@@ -23,6 +24,7 @@ const createRoom = asyncHandler(async (req, res) => {
   logger.info(`[CREATE ROOM] ${room.roomNumber}`);
 
   await recalcRentRange(pgId);
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Room Created", entityType: "Room", entityId: room._id, details: `${pg.name} — Room ${room.roomNumber}` });
   res.status(201).json(room);
 });
 
@@ -31,7 +33,7 @@ const updateRoom = asyncHandler(async (req, res) => {
   if (!room) throw new AppError("Room not found", 404);
   if (room.pg.owner.toString() !== req.user._id.toString()) throw new AppError("Not authorized", 403);
 
-  const { roomNumber, capacity, rent, floor, type } = req.body;
+  const { roomNumber, capacity, rent, floor, type, status } = req.body;
   if (capacity !== undefined && Number(capacity) < room.occupancy) {
     throw new AppError(`Capacity can't be less than current occupancy (${room.occupancy})`, 400);
   }
@@ -42,6 +44,7 @@ const updateRoom = asyncHandler(async (req, res) => {
     ...(rent !== undefined && { rent }),
     ...(floor !== undefined && { floor }),
     ...(type !== undefined && { type }),
+    ...(status !== undefined && { status }),
   });
   await room.save();
   await recalcRentRange(room.pg._id);
@@ -56,7 +59,6 @@ const getRoomsByPG = asyncHandler(async (req, res) => {
   res.json(rooms);
 });
 
-// Allocate by email — supports unregistered residents
 const allocateResident = asyncHandler(async (req, res) => {
   const { residentEmail, residentName } = req.body;
   let resident = await User.findOne({ email: residentEmail.toLowerCase() });
@@ -86,11 +88,13 @@ const allocateResident = asyncHandler(async (req, res) => {
 
   room.residents.push(resident._id);
   room.occupancy += 1;
+  if (room.occupancy >= room.capacity) room.status = "occupied";
   await room.save();
 
   await User.findByIdAndUpdate(resident._id, {
     assignedPG: room.pg._id,
     assignedRoom: room._id,
+    moveInDate: new Date(),
   });
 
   await notify({
@@ -100,6 +104,8 @@ const allocateResident = asyncHandler(async (req, res) => {
     type: "allocation",
     link: "/resident/room",
   });
+
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Resident Added", entityType: "Room", entityId: room._id, details: `${resident.email} -> Room ${room.roomNumber}` });
 
   logger.info(`[ALLOCATE] Done. Room: ${room.roomNumber} Resident: ${resident.email}`);
   const populated = await Room.findById(room._id)
@@ -114,9 +120,12 @@ const removeResident = asyncHandler(async (req, res) => {
 
   room.residents = room.residents.filter((r) => r.toString() !== residentId);
   room.occupancy = Math.max(0, room.occupancy - 1);
+  if (room.occupancy < room.capacity) room.status = "available";
   await room.save();
 
-  await User.findByIdAndUpdate(residentId, { assignedPG: null, assignedRoom: null });
+  await User.findByIdAndUpdate(residentId, { assignedPG: null, assignedRoom: null, moveOutDate: new Date() });
+
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Resident Removed", entityType: "Room", entityId: room._id, details: `Room ${room.roomNumber}` });
 
   const populated = await Room.findById(room._id)
     .populate("residents", "name email phone photoUrl isVerified invitedByOwner");
@@ -134,7 +143,6 @@ const getMyRoom = asyncHandler(async (req, res) => {
   res.json(room);
 });
 
-// Owner view: get full resident profile
 const getResidentProfile = asyncHandler(async (req, res) => {
   const resident = await User.findById(req.params.residentId)
     .select("-password")
@@ -162,6 +170,7 @@ const deleteRoom = asyncHandler(async (req, res) => {
   await room.deleteOne();
   await recalcRentRange(pgId);
 
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Room Deleted", entityType: "Room", entityId: room._id, details: `Room ${room.roomNumber}` });
   res.json({ message: "Room deleted" });
 });
 

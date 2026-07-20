@@ -3,20 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 
 const FEATURES = [
   { icon: "🔍", title: "Smart Search", desc: "Filter by city, locality, room type and budget. Find the right PG in seconds." },
-  { icon: "💳", title: "Online Rent Payment", desc: "Pay rent via Razorpay — UPI, cards, net banking. Instant confirmation." },
-  { icon: "📢", title: "Complaint Tracking", desc: "Raise issues and track them to resolution. Owners get notified instantly." },
-  { icon: "👥", title: "Resident Management", desc: "Owners manage rooms, allocate residents and generate rent records in one click." },
-  { icon: "📊", title: "Revenue Analytics", desc: "6-month collected vs pending trend chart so owners always know where they stand." },
+  { icon: "💳", title: "3 Ways to Pay Rent", desc: "Smart PG (Razorpay), Direct UPI, or Cash — all tracked and receipted." },
+  { icon: "📢", title: "Complaint Tracking", desc: "Raise issues with photos, get assigned staff, and track to resolution." },
+  { icon: "👥", title: "Resident Management", desc: "Owners manage rooms, allocate residents by QR invite, and generate rent in one click." },
+  { icon: "📊", title: "Revenue Analytics & Reports", desc: "Revenue trends plus downloadable PDF/Excel reports." },
   { icon: "🪪", title: "ID Verification", desc: "Residents upload Aadhaar, PAN or Passport. Owners see full KYC at a glance." },
-  { icon: "⭐", title: "Ratings & Reviews", desc: "Verified residents leave honest reviews. Owners build trust, residents choose wisely." },
-  { icon: "🔔", title: "Real-time Notifications", desc: "Every payment, complaint update and allocation triggers an in-app notification." },
+  { icon: "⭐", title: "Ratings & Reviews", desc: "Verified residents leave honest reviews, owners can reply publicly." },
+  { icon: "🔔", title: "Real-time Notifications", desc: "Every payment, complaint, announcement and visitor triggers an in-app alert." },
 ];
 
 const STEPS = [
   { step: "1", who: "Owner", action: "Create your PG listing with photos, amenities and rules." },
-  { step: "2", who: "Owner", action: "Add rooms, set rent, allocate residents by email." },
+  { step: "2", who: "Owner", action: "Add rooms and generate a QR invite for instant resident joining." },
   { step: "3", who: "Owner", action: "Generate monthly rent records with one click." },
-  { step: "4", who: "Resident", action: "Receive a notification, pay rent online, download the receipt." },
+  { step: "4", who: "Resident", action: "Pick a payment method — Smart PG, UPI, or Cash — and download the receipt." },
 ];
 
 export default function Home() {
@@ -29,9 +29,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4]">
-
-      {/* ── Hero ─────────────────────────────────────────────── */}
+    <div className="min-h-screen bg-[#f8f7f4] dark:bg-slate-900">
       <section className="relative overflow-hidden bg-slate-950 text-white">
         <div
           className="absolute inset-0 opacity-25 pointer-events-none"
@@ -52,7 +50,7 @@ export default function Home() {
           </h1>
 
           <p className="text-slate-300 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            Browse verified PGs, pay rent online, track complaints and manage
+            Browse verified PGs, pay rent your way, track complaints and manage
             your stay — all in one place.
           </p>
 
@@ -76,10 +74,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── How it works ─────────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-6 py-20">
-        <h2 className="font-heading text-3xl font-bold text-center text-slate-900 mb-2">How it works</h2>
-        <p className="text-center text-slate-500 mb-12">From listing to payment in four simple steps</p>
+        <h2 className="font-heading text-3xl font-bold text-center text-slate-900 dark:text-white mb-2">How it works</h2>
+        <p className="text-center text-slate-500 dark:text-slate-400 mb-12">From listing to payment in four simple steps</p>
         <div className="grid md:grid-cols-4 gap-6">
           {STEPS.map((s) => (
             <div key={s.step} className="text-center">
@@ -87,90 +84,71 @@ export default function Home() {
                 {s.step}
               </div>
               <p className="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">{s.who}</p>
-              <p className="text-slate-600 text-sm leading-relaxed">{s.action}</p>
+              <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{s.action}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Features ─────────────────────────────────────────── */}
-      <section className="bg-white py-20">
+      <section className="bg-white dark:bg-slate-800 py-20">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="font-heading text-3xl font-bold text-center text-slate-900 mb-2">Everything you need</h2>
-          <p className="text-center text-slate-500 mb-12">Built for both PG owners and residents</p>
+          <h2 className="font-heading text-3xl font-bold text-center text-slate-900 dark:text-white mb-2">Everything you need</h2>
+          <p className="text-center text-slate-500 dark:text-slate-400 mb-12">Built for both PG owners and residents</p>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {FEATURES.map((f) => (
               <div key={f.title} className="card p-5 hover:border-brand-200 transition">
                 <div className="text-3xl mb-3">{f.icon}</div>
-                <h3 className="font-heading font-semibold text-slate-900 mb-1">{f.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
+                <h3 className="font-heading font-semibold text-slate-900 dark:text-white mb-1">{f.title}</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Owner / Resident split CTA ────────────────────────── */}
       <section className="max-w-5xl mx-auto px-6 py-20">
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Owner */}
-          <div className="card p-8 border-brand-200 bg-gradient-to-br from-brand-50 to-white">
+          <div className="card p-8 border-brand-200 bg-gradient-to-br from-brand-50 to-white dark:from-slate-800 dark:to-slate-800">
             <p className="text-3xl mb-3">🔑</p>
-            <h3 className="font-heading text-2xl font-bold text-slate-900 mb-2">Are you a PG Owner?</h3>
-            <p className="text-slate-500 text-sm mb-5 leading-relaxed">
-              List your PG, manage rooms and residents, collect rent online and
+            <h3 className="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-2">Are you a PG Owner?</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-5 leading-relaxed">
+              List your PG, manage rooms, staff and visitors, collect rent your way and
               track everything from one dashboard — completely free.
             </p>
-            <ul className="text-sm text-slate-600 space-y-2 mb-6">
-              {["Unlimited PG listings", "Online + offline rent collection", "Auto rent generation & reminders", "Revenue analytics dashboard"].map((p) => (
+            <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-2 mb-6">
+              {["Unlimited PG listings", "Razorpay + UPI + Cash rent collection", "QR-based resident onboarding", "Reports, analytics & activity logs"].map((p) => (
                 <li key={p} className="flex items-center gap-2"><span className="text-brand-500">✓</span>{p}</li>
               ))}
             </ul>
-            <Link to="/signup" className="btn-primary" onClick={() => {}}>
-              List Your PG →
-            </Link>
+            <Link to="/signup" className="btn-primary">List Your PG →</Link>
           </div>
 
-          {/* Resident */}
-          <div className="card p-8 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+          <div className="card p-8 border-blue-200 bg-gradient-to-br from-blue-50 to-white dark:from-slate-800 dark:to-slate-800">
             <p className="text-3xl mb-3">🏠</p>
-            <h3 className="font-heading text-2xl font-bold text-slate-900 mb-2">Looking for a PG?</h3>
-            <p className="text-slate-500 text-sm mb-5 leading-relaxed">
-              Search verified PGs across cities, pay rent securely and keep
+            <h3 className="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-2">Looking for a PG?</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-5 leading-relaxed">
+              Search verified PGs across cities, pay rent your way and keep
               everything — receipts, complaints, roommates — in one place.
             </p>
-            <ul className="text-sm text-slate-600 space-y-2 mb-6">
-              {["Browse 500+ verified PGs", "Pay rent via UPI / card / netbanking", "Instant PDF receipts", "Raise & track complaints"].map((p) => (
+            <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-2 mb-6">
+              {["Browse 500+ verified PGs", "Pay via Smart PG, UPI or Cash", "Instant PDF receipts", "Raise & track complaints"].map((p) => (
                 <li key={p} className="flex items-center gap-2"><span className="text-blue-500">✓</span>{p}</li>
               ))}
             </ul>
-            <Link to="/pgs" className="btn-secondary">
-              Browse PGs →
-            </Link>
+            <Link to="/pgs" className="btn-secondary">Browse PGs →</Link>
           </div>
         </div>
       </section>
 
-      {/* ── Final CTA ────────────────────────────────────────── */}
       <section className="bg-slate-950 py-20 text-center text-white px-6">
-        <h2 className="font-heading text-4xl font-bold mb-3">
-          Ready to simplify PG life?
-        </h2>
-        <p className="text-slate-400 mb-8 text-lg">
-          Join thousands of owners and residents already using Smart PG.
-        </p>
+        <h2 className="font-heading text-4xl font-bold mb-3">Ready to simplify PG life?</h2>
+        <p className="text-slate-400 mb-8 text-lg">Join thousands of owners and residents already using Smart PG.</p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Link to="/signup" className="btn-primary text-base px-8 py-3">
-            Create Free Account
-          </Link>
-          <Link to="/pgs"
-            className="border border-white/30 text-white px-8 py-3 rounded-xl font-semibold hover:bg-white/10 transition text-base">
-            Browse PGs
-          </Link>
+          <Link to="/signup" className="btn-primary text-base px-8 py-3">Create Free Account</Link>
+          <Link to="/pgs" className="border border-white/30 text-white px-8 py-3 rounded-xl font-semibold hover:bg-white/10 transition text-base">Browse PGs</Link>
         </div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="bg-slate-950 border-t border-white/5 py-8 text-center text-slate-500 text-sm">
         <p>© {new Date().getFullYear()} Smart PG. All rights reserved.</p>
         <div className="flex justify-center gap-6 mt-3">
@@ -179,7 +157,6 @@ export default function Home() {
           <Link to="/login" className="hover:text-slate-300 transition">Login</Link>
         </div>
       </footer>
-
     </div>
   );
 }

@@ -1,19 +1,26 @@
 const request = require("supertest");
 const app = require("../app");
+const Otp = require("../models/Otp");
 
 describe("Auth flow", () => {
   const user = { name: "Test User", email: "test@example.com", password: "password123", role: "resident" };
+
+  const signupAndVerify = async (overrides = {}) => {
+    const payload = { ...user, ...overrides };
+    await request(app).post("/api/auth/signup").send(payload);
+    const record = await Otp.findOne({ email: payload.email.toLowerCase() }).sort({ createdAt: -1 });
+    return request(app).post("/api/auth/verify-email").send({ email: payload.email, code: record.code });
+  };
 
   it("rejects signup with an invalid email", async () => {
     const res = await request(app).post("/api/auth/signup").send({ ...user, email: "not-an-email" });
     expect(res.statusCode).toBe(400);
   });
 
-  it("signs up a new resident and returns a token", async () => {
+  it("signs up a new resident as unverified", async () => {
     const res = await request(app).post("/api/auth/signup").send(user);
     expect(res.statusCode).toBe(201);
-    expect(res.body.token).toBeDefined();
-    expect(res.body.role).toBe("resident");
+    expect(res.body.message).toBeDefined();
   });
 
   it("prevents duplicate signups with the same email", async () => {
@@ -22,8 +29,10 @@ describe("Auth flow", () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it("logs in with correct credentials", async () => {
-    await request(app).post("/api/auth/signup").send(user);
+  it("logs in with correct credentials once verified", async () => {
+    const verifyRes = await signupAndVerify();
+    expect(verifyRes.statusCode).toBe(200);
+
     const res = await request(app)
       .post("/api/auth/login")
       .send({ email: user.email, password: user.password });
@@ -32,7 +41,7 @@ describe("Auth flow", () => {
   });
 
   it("rejects login with the wrong password", async () => {
-    await request(app).post("/api/auth/signup").send(user);
+    await signupAndVerify();
     const res = await request(app)
       .post("/api/auth/login")
       .send({ email: user.email, password: "wrongpassword" });
@@ -45,10 +54,10 @@ describe("Auth flow", () => {
   });
 
   it("returns the profile with a valid token", async () => {
-    const signupRes = await request(app).post("/api/auth/signup").send(user);
+    const verifyRes = await signupAndVerify();
     const res = await request(app)
       .get("/api/auth/me")
-      .set("Authorization", `Bearer ${signupRes.body.token}`);
+      .set("Authorization", `Bearer ${verifyRes.body.token}`);
     expect(res.statusCode).toBe(200);
     expect(res.body.email).toBe(user.email);
   });

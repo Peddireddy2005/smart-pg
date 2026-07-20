@@ -4,10 +4,13 @@ export const signup = (payload) => api.post("/auth/signup", payload).then((r) =>
 
 export const login = (payload) => api.post("/auth/login", payload).then((r) => r.data);
 
-// `credential` is the Google ID token from Google Identity Services.
-// `role` is only used when creating a brand new account.
 export const googleAuth = (credential, role) =>
   api.post("/auth/google", { credential, role }).then((r) => r.data);
+
+export const verifyEmail = (email, code) =>
+  api.post("/auth/verify-email", { email, code }).then((r) => r.data);
+
+export const resendOtp = (email) => api.post("/auth/resend-otp", { email }).then((r) => r.data);
 
 export const forgotPassword = (email) =>
   api.post("/auth/forgot-password", { email }).then((r) => r.data);

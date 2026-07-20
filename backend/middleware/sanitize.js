@@ -1,7 +1,3 @@
-// express-mongo-sanitize reassigns `req.query`, which Express 5 exposes as a
-// getter-only property — that throws at runtime. This does the same job
-// (stripping keys that start with `$` or contain `.` to prevent NoSQL
-// operator injection) by mutating objects in place instead.
 const sanitizeInPlace = (obj) => {
   if (!obj || typeof obj !== "object") return;
   for (const key of Object.keys(obj)) {
