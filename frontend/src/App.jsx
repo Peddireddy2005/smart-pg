@@ -42,6 +42,7 @@ import OwnerSettings from "./pages/owner/Settings";
 import ResidentLayout from "./layouts/ResidentLayout";
 import ResidentDashboard from "./pages/resident/ResidentDashboard";
 import ResidentRoom from "./pages/resident/ResidentRoom";
+import JoinPG from "./pages/resident/JoinPG";
 import ResidentPayments from "./pages/resident/ResidentPayments";
 import ResidentComplaints from "./pages/resident/ResidentComplaints";
 import MyProfile from "./pages/resident/MyProfile";
@@ -123,6 +124,7 @@ export default function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<ResidentDashboard />} />
             <Route path="room" element={<ResidentRoom />} />
+            <Route path="join" element={<JoinPG />} />
             <Route path="payments" element={<ResidentPayments />} />
             <Route path="complaints" element={<ResidentComplaints />} />
             <Route path="announcements" element={<ResidentAnnouncements />} />

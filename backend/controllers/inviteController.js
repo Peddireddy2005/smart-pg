@@ -11,10 +11,10 @@ const { logActivity } = require("../utils/activityLog");
 
 const INVITE_EXPIRE_HOURS = 72;
 
-// Owner: generate a QR-joinable invite link for a specific room (spec §7).
+// Owner: generate a QR-joinable invite link + short code for a specific room (spec §7).
 const createInvite = asyncHandler(async (req, res) => {
   const room = await Room.findById(req.params.roomId).populate("pg");
-  if (!room) throw new AppError("Room not found", 404);
+  if (!room || !room.pg) throw new AppError("Room not found", 404);
   if (room.pg.owner.toString() !== req.user._id.toString()) throw new AppError("Not authorized", 403);
   if (room.occupancy >= room.capacity) throw new AppError("Room is already full", 400);
 
@@ -28,11 +28,11 @@ const createInvite = asyncHandler(async (req, res) => {
   const joinUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/join/${invite.token}`;
   const qrDataUrl = await QRCode.toDataURL(joinUrl);
 
-  logger.info(`[INVITE] Created for room ${room.roomNumber}: ${invite.token}`);
-  res.status(201).json({ token: invite.token, joinUrl, qrDataUrl, expiresAt: invite.expiresAt });
+  logger.info(`[INVITE] Created for room ${room.roomNumber}: ${invite.token} (code ${invite.code})`);
+  res.status(201).json({ token: invite.token, code: invite.code, joinUrl, qrDataUrl, expiresAt: invite.expiresAt });
 });
 
-// Public: fetch invite details (room/PG name) before the resident logs in.
+// Public: fetch invite details (room/PG name) before the resident logs in — via QR link token.
 const getInvite = asyncHandler(async (req, res) => {
   const invite = await Invite.findOne({ token: req.params.token })
     .populate("pg", "name city address")
@@ -43,7 +43,19 @@ const getInvite = asyncHandler(async (req, res) => {
   res.json(invite);
 });
 
+// Same lookup, but by the short human-typeable code instead of the QR token.
+const getInviteByCode = asyncHandler(async (req, res) => {
+  const invite = await Invite.findOne({ code: req.params.code.toUpperCase() })
+    .populate("pg", "name city address")
+    .populate("room", "roomNumber rent capacity occupancy type");
+  if (!invite) throw new AppError("Invalid or expired code", 404);
+  if (invite.usedBy) throw new AppError("This invite has already been used", 400);
+  if (invite.expiresAt < new Date()) throw new AppError("This invite code has expired", 400);
+  res.json(invite);
+});
+
 // Resident (already authenticated via OTP/signup): claim the invite and get auto-assigned.
+// Used by both the QR flow and the "enter code" flow — both resolve to a token first.
 const claimInvite = asyncHandler(async (req, res) => {
   const invite = await Invite.findOne({ token: req.params.token }).populate("room");
   if (!invite) throw new AppError("Invite not found", 404);
@@ -53,6 +65,9 @@ const claimInvite = asyncHandler(async (req, res) => {
   const resident = await User.findById(req.user._id);
   if (resident.role !== "resident") throw new AppError("Only residents can join via invite", 400);
   if (resident.assignedRoom) throw new AppError("You are already assigned to a room", 400);
+  if (!resident.idProofType || !resident.idProofUrl) {
+    throw new AppError("Please complete your ID verification in My Profile before joining a PG", 400);
+  }
 
   const room = await Room.findById(invite.room._id).populate("pg");
   if (room.occupancy >= room.capacity) throw new AppError("Room is already full", 400);
@@ -72,15 +87,15 @@ const claimInvite = asyncHandler(async (req, res) => {
 
   await notify({
     user: invite.createdBy,
-    title: "Resident Joined via QR",
-    message: `${resident.name} joined Room ${room.roomNumber} at ${room.pg.name} via QR invite.`,
+    title: "Resident Joined via Invite",
+    message: `${resident.name} joined Room ${room.roomNumber} at ${room.pg.name} via invite.`,
     type: "allocation",
     link: "/owner/dashboard",
   });
-  await logActivity({ owner: invite.createdBy, actor: resident._id, action: "Resident Auto-Assigned (QR)", entityType: "Room", entityId: room._id, details: `${resident.email} -> Room ${room.roomNumber}` });
+  await logActivity({ owner: invite.createdBy, actor: resident._id, action: "Resident Auto-Assigned (Invite)", entityType: "Room", entityId: room._id, details: `${resident.email} -> Room ${room.roomNumber}` });
 
   const populatedRoom = await Room.findById(room._id).populate("residents", "name email phone photoUrl");
   res.json({ message: "Joined successfully", room: populatedRoom });
 });
 
-module.exports = { createInvite, getInvite, claimInvite };
+module.exports = { createInvite, getInvite, getInviteByCode, claimInvite };

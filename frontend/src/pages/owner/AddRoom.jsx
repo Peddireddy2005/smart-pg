@@ -3,9 +3,19 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 
+// Room type is derived from bed capacity rather than picked manually —
+// keeps it consistent and removes a redundant decision for the owner.
+const deriveRoomType = (capacity) => {
+  const n = Number(capacity);
+  if (n === 1) return "Single";
+  if (n === 2) return "Double";
+  if (n === 3) return "Triple";
+  return "Dormitory";
+};
+
 export default function AddRoom() {
   const { pgId } = useParams();
-  const [form, setForm] = useState({ roomNumber: "", capacity: "", rent: "", floor: "", type: "" });
+  const [form, setForm] = useState({ roomNumber: "", capacity: "", rent: "", floor: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -14,7 +24,7 @@ export default function AddRoom() {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      await api.post(`/rooms/${pgId}`, form);
+      await api.post(`/rooms/${pgId}`, { ...form, type: deriveRoomType(form.capacity) });
       toast.success("Room added!");
       navigate(`/owner/pg/${pgId}`);
     } catch (err) {
@@ -47,18 +57,11 @@ export default function AddRoom() {
           </div>
         </div>
 
-        <div>
-          <label className="label">Room Type</label>
-          <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-            <option value="">Select type</option>
-            {["Single", "Double", "Triple", "Dormitory"].map((t) => <option key={t}>{t}</option>)}
-          </select>
-        </div>
-
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Capacity (beds) *</label>
             <input className="input" type="number" placeholder="2" required min={1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} />
+            {form.capacity && <p className="text-xs text-slate-400 mt-1">Will be listed as: {deriveRoomType(form.capacity)}</p>}
           </div>
           <div>
             <label className="label">Monthly Rent (₹) *</label>

@@ -8,6 +8,7 @@ import { clearSession, getSession } from "../services/authService";
 const links = [
   { to: "/owner/dashboard", icon: "⊞", label: "Dashboard" },
   { to: "/owner/analytics", icon: "📊", label: "Analytics" },
+  { to: "/pgs", icon: "🔍", label: "Browse PGs" },
   { to: "/owner/payments", icon: "₹", label: "Payments" },
   { to: "/owner/complaints", icon: "⚑", label: "Complaints" },
   { to: "/owner/announcements", icon: "📣", label: "Announcements" },

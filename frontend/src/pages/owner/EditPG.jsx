@@ -19,12 +19,18 @@ const AMENITY_TOGGLES = [
   ["hasWifi", "📶 WiFi"], ["hasLaundry", "🧺 Laundry"],
 ];
 
+const COMMON_AMENITIES = [
+  "Geyser", "TV", "Fridge", "Power Backup", "CCTV", "Housekeeping",
+  "Study Table", "Attached Bathroom", "Balcony", "Cupboard", "RO Water", "Lift",
+];
+
 export default function EditPG() {
   const { id } = useParams();
   const navigate = useNavigate();
   const fileRef = useRef(null);
 
   const [form, setForm] = useState(null);
+  const [customAmenity, setCustomAmenity] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [removingImage, setRemovingImage] = useState(null);
@@ -34,8 +40,8 @@ export default function EditPG() {
     api.get(`/pg/${id}`).then(({ data }) => {
       setForm({
         name: data.name || "", city: data.city || "", locality: data.locality || "",
-        address: data.address || "", description: data.description || "",
-        amenities: (data.amenities || []).join(", "), contactPhone: data.contactPhone || "",
+        address: data.address || "", pincode: data.pincode || "", description: data.description || "",
+        amenities: data.amenities || [], contactPhone: data.contactPhone || "",
         rules: data.rules || "", isActive: data.isActive !== false, gender: data.gender || "",
         hasFood: !!data.hasFood, hasAC: !!data.hasAC, hasParking: !!data.hasParking,
         hasWifi: !!data.hasWifi, hasLaundry: !!data.hasLaundry,
@@ -44,12 +50,26 @@ export default function EditPG() {
     });
   }, [id]);
 
+  const toggleAmenity = (a) => {
+    setForm((f) => ({
+      ...f,
+      amenities: f.amenities.includes(a) ? f.amenities.filter((x) => x !== a) : [...f.amenities, a],
+    }));
+  };
+
+  const addCustomAmenity = () => {
+    const value = customAmenity.trim();
+    if (value && !form.amenities.includes(value)) {
+      setForm((f) => ({ ...f, amenities: [...f.amenities, value] }));
+    }
+    setCustomAmenity("");
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const payload = { ...form, amenities: form.amenities.split(",").map((a) => a.trim()).filter(Boolean) };
-      await api.put(`/pg/${id}`, payload);
+      await api.put(`/pg/${id}`, form);
       toast.success("PG updated");
       navigate(`/owner/pg/${id}`);
     } catch (err) {
@@ -122,7 +142,14 @@ export default function EditPG() {
           <F label="City *" field="city" form={form} setForm={setForm} required />
           <F label="Locality" field="locality" form={form} setForm={setForm} />
         </div>
-        <F label="Full Address *" field="address" form={form} setForm={setForm} required />
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="col-span-2">
+            <F label="Building / Street / Landmark *" field="address" form={form} setForm={setForm} required />
+          </div>
+          <F label="PIN Code" field="pincode" form={form} setForm={setForm} />
+        </div>
+
         <F label="Contact Phone" field="contactPhone" form={form} setForm={setForm} />
 
         <div>
@@ -137,6 +164,7 @@ export default function EditPG() {
 
         <div>
           <label className="label">Facilities</label>
+          <p className="text-xs text-slate-400 -mt-1 mb-2">Used for search filters on the listings page.</p>
           <div className="flex flex-wrap gap-2">
             {AMENITY_TOGGLES.map(([key, label]) => (
               <button key={key} type="button" onClick={() => setForm({ ...form, [key]: !form[key] })}
@@ -148,11 +176,34 @@ export default function EditPG() {
         </div>
 
         <div>
+          <label className="label">Additional Amenities</label>
+          <p className="text-xs text-slate-400 -mt-1 mb-2">Shown on your listing page for extra detail.</p>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {COMMON_AMENITIES.map((a) => (
+              <button key={a} type="button" onClick={() => toggleAmenity(a)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${form.amenities.includes(a) ? "bg-brand-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
+                {a}
+              </button>
+            ))}
+            {form.amenities.filter((a) => !COMMON_AMENITIES.includes(a)).map((a) => (
+              <button key={a} type="button" onClick={() => toggleAmenity(a)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-500 text-white">
+                {a} ✕
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input className="input" placeholder="Add something else..." value={customAmenity}
+              onChange={(e) => setCustomAmenity(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomAmenity(); } }} />
+            <button type="button" onClick={addCustomAmenity} className="btn-secondary text-sm shrink-0">+ Add</button>
+          </div>
+        </div>
+
+        <div>
           <label className="label">Description</label>
           <textarea className="input" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </div>
-
-        <F label="Amenities (comma separated)" field="amenities" form={form} setForm={setForm} />
 
         <div>
           <label className="label">House Rules</label>

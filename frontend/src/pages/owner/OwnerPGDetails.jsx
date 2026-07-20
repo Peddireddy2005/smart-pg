@@ -18,7 +18,7 @@ export default function OwnerPGDetails() {
   const [generating, setGenerating] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(null);
   const [confirmDeleteRoom, setConfirmDeleteRoom] = useState(null);
-  const [qrModal, setQrModal] = useState(null); // { qrDataUrl, joinUrl }
+  const [qrModal, setQrModal] = useState(null); // { qrDataUrl, joinUrl, code }
 
   const loadRooms = useCallback(async () => {
     const { data } = await api.get(`/rooms/${id}`);
@@ -72,7 +72,7 @@ export default function OwnerPGDetails() {
       const data = await createInvite(roomId);
       setQrModal(data);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to generate QR invite");
+      toast.error(err.response?.data?.message || "Failed to generate invite");
     }
   };
 
@@ -192,7 +192,7 @@ export default function OwnerPGDetails() {
                 <div className="flex gap-2 mt-3 flex-wrap">
                   <Link to={`/owner/pg/${id}/room/${room._id}/edit`} className="btn-secondary text-xs">Edit</Link>
                   {room.occupancy < room.capacity && (
-                    <button onClick={() => handleGenerateQR(room._id)} className="btn-secondary text-xs">📱 QR Invite</button>
+                    <button onClick={() => handleGenerateQR(room._id)} className="btn-secondary text-xs">📱 Invite</button>
                   )}
                   <button onClick={() => setConfirmDeleteRoom(room._id)} className="btn-danger text-xs">Delete Room</button>
                 </div>
@@ -224,9 +224,16 @@ export default function OwnerPGDetails() {
       {qrModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setQrModal(null)}>
           <div className="card p-6 max-w-sm w-full text-center" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-heading font-bold text-lg text-slate-900 dark:text-white mb-3">Scan to Join</h3>
-            <img src={qrModal.qrDataUrl} alt="QR Invite" className="mx-auto rounded-xl border border-gray-100 dark:border-slate-700 mb-3 w-56 h-56" />
-            <p className="text-xs text-slate-400 mb-4 break-all">{qrModal.joinUrl}</p>
+            <h3 className="font-heading font-bold text-lg text-slate-900 dark:text-white mb-3">Invite a Resident</h3>
+            <img src={qrModal.qrDataUrl} alt="QR Invite" className="mx-auto rounded-xl border border-gray-100 dark:border-slate-700 mb-4 w-56 h-56" />
+
+            <div className="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-4 mb-4">
+              <p className="text-xs text-slate-400 mb-1">Or share this code</p>
+              <p className="font-mono text-2xl tracking-widest font-bold text-slate-900 dark:text-white">{qrModal.code}</p>
+              <p className="text-xs text-slate-400 mt-1">They can enter it under "Join a PG" in their sidebar.</p>
+            </div>
+
+            <button onClick={() => { navigator.clipboard.writeText(qrModal.code); toast.success("Code copied"); }} className="btn-secondary text-sm w-full mb-2">Copy Code</button>
             <button onClick={() => { navigator.clipboard.writeText(qrModal.joinUrl); toast.success("Link copied"); }} className="btn-secondary text-sm w-full mb-2">Copy Link</button>
             <button onClick={() => setQrModal(null)} className="btn-primary text-sm w-full">Done</button>
           </div>

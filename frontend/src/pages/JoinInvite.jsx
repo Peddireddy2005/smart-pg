@@ -18,6 +18,7 @@ export default function JoinInvite() {
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const user = getSession();
+  const missingIdProof = user && !(user.idProofType && user.idProofUrl);
 
   useEffect(() => {
     getInvite(token)
@@ -75,6 +76,14 @@ export default function JoinInvite() {
                 </div>
               ) : user.role !== "resident" ? (
                 <p className="text-amber-600 text-sm mt-6">Only resident accounts can join a room. Please log in as a resident.</p>
+              ) : missingIdProof ? (
+                <div className="mt-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/40 rounded-xl p-4 text-left">
+                  <p className="text-amber-800 dark:text-amber-300 text-sm font-medium">⚠️ ID verification required</p>
+                  <p className="text-amber-700 dark:text-amber-400 text-sm mt-1">
+                    Please upload your ID proof before joining.{" "}
+                    <Link to="/resident/profile" className="underline font-medium">Go to My Profile →</Link>
+                  </p>
+                </div>
               ) : (
                 <button disabled={claiming} onClick={handleClaim} className="btn-primary w-full justify-center mt-6">
                   {claiming ? "Joining..." : "Join This Room"}

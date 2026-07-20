@@ -4,6 +4,7 @@ const pgSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     address: { type: String, required: true },
+    pincode: { type: String, default: "" },
     city: { type: String, required: true },
     locality: { type: String, default: "" },
     description: { type: String, default: "" },

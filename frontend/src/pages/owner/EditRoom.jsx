@@ -3,6 +3,14 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 
+const deriveRoomType = (capacity) => {
+  const n = Number(capacity);
+  if (n === 1) return "Single";
+  if (n === 2) return "Double";
+  if (n === 3) return "Triple";
+  return "Dormitory";
+};
+
 export default function EditRoom() {
   const { pgId, roomId } = useParams();
   const [form, setForm] = useState(null);
@@ -16,7 +24,7 @@ export default function EditRoom() {
       if (room) {
         setForm({
           roomNumber: room.roomNumber, capacity: room.capacity, rent: room.rent,
-          floor: room.floor || "", type: room.type || "", status: room.status || "available",
+          floor: room.floor || "", status: room.status || "available",
           occupancy: room.occupancy,
         });
       }
@@ -27,7 +35,7 @@ export default function EditRoom() {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      await api.put(`/rooms/${roomId}`, form);
+      await api.put(`/rooms/${roomId}`, { ...form, type: deriveRoomType(form.capacity) });
       toast.success("Room updated");
       navigate(`/owner/pg/${pgId}`);
     } catch (err) {
@@ -58,13 +66,6 @@ export default function EditRoom() {
           </div>
         </div>
         <div>
-          <label className="label">Room Type</label>
-          <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-            <option value="">Select type</option>
-            {["Single", "Double", "Triple", "Dormitory"].map((t) => <option key={t}>{t}</option>)}
-          </select>
-        </div>
-        <div>
           <label className="label">Status</label>
           <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
             <option value="available">Available</option>
@@ -77,6 +78,7 @@ export default function EditRoom() {
             <label className="label">Capacity *</label>
             <input className="input" type="number" required min={form.occupancy || 1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} />
             {form.occupancy > 0 && <p className="text-xs text-slate-400 mt-1">Can't go below {form.occupancy} (current occupancy)</p>}
+            {form.capacity && <p className="text-xs text-slate-400 mt-1">Will be listed as: {deriveRoomType(form.capacity)}</p>}
           </div>
           <div>
             <label className="label">Monthly Rent (₹) *</label>

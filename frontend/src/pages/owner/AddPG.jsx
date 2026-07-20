@@ -17,25 +17,42 @@ const AMENITY_TOGGLES = [
   ["hasWifi", "📶 WiFi"], ["hasLaundry", "🧺 Laundry"],
 ];
 
+const COMMON_AMENITIES = [
+  "Geyser", "TV", "Fridge", "Power Backup", "CCTV", "Housekeeping",
+  "Study Table", "Attached Bathroom", "Balcony", "Cupboard", "RO Water", "Lift",
+];
+
 export default function AddPG() {
   const [form, setForm] = useState({
-    name: "", city: "", locality: "", address: "",
-    description: "", amenities: "", contactPhone: "", rules: "",
+    name: "", city: "", locality: "", address: "", pincode: "",
+    description: "", amenities: [], contactPhone: "", rules: "",
     gender: "", hasFood: false, hasAC: false, hasParking: false, hasWifi: false, hasLaundry: false,
   });
+  const [customAmenity, setCustomAmenity] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const toggleAmenity = (a) => {
+    setForm((f) => ({
+      ...f,
+      amenities: f.amenities.includes(a) ? f.amenities.filter((x) => x !== a) : [...f.amenities, a],
+    }));
+  };
+
+  const addCustomAmenity = () => {
+    const value = customAmenity.trim();
+    if (value && !form.amenities.includes(value)) {
+      setForm((f) => ({ ...f, amenities: [...f.amenities, value] }));
+    }
+    setCustomAmenity("");
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      const payload = {
-        ...form,
-        amenities: form.amenities.split(",").map((a) => a.trim()).filter(Boolean),
-      };
-      const { data } = await api.post("/pg", payload);
+      const { data } = await api.post("/pg", form);
       toast.success("PG created!");
       navigate(`/owner/pg/${data._id}`);
     } catch (err) {
@@ -64,7 +81,14 @@ export default function AddPG() {
           <Field label="Locality" field="locality" form={form} setForm={setForm} placeholder="Whitefield" />
         </div>
 
-        <Field label="Full Address *" field="address" form={form} setForm={setForm} placeholder="Street, Area, City" required />
+        <div className="grid grid-cols-3 gap-4">
+          <div className="col-span-2">
+            <Field label="Building / Street / Landmark *" field="address" form={form} setForm={setForm}
+              placeholder="81/1 Sri Krishna Nilaya, Chalukya Layout 1st Cross" required />
+          </div>
+          <Field label="PIN Code" field="pincode" form={form} setForm={setForm} placeholder="560045" />
+        </div>
+
         <Field label="Contact Phone" field="contactPhone" form={form} setForm={setForm} placeholder="+91 98765 43210" />
 
         <div>
@@ -79,6 +103,7 @@ export default function AddPG() {
 
         <div>
           <label className="label">Facilities</label>
+          <p className="text-xs text-slate-400 -mt-1 mb-2">Used for search filters on the listings page.</p>
           <div className="flex flex-wrap gap-2">
             {AMENITY_TOGGLES.map(([key, label]) => (
               <button key={key} type="button" onClick={() => setForm({ ...form, [key]: !form[key] })}
@@ -90,12 +115,35 @@ export default function AddPG() {
         </div>
 
         <div>
+          <label className="label">Additional Amenities</label>
+          <p className="text-xs text-slate-400 -mt-1 mb-2">Shown on your listing page for extra detail.</p>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {COMMON_AMENITIES.map((a) => (
+              <button key={a} type="button" onClick={() => toggleAmenity(a)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${form.amenities.includes(a) ? "bg-brand-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
+                {a}
+              </button>
+            ))}
+            {form.amenities.filter((a) => !COMMON_AMENITIES.includes(a)).map((a) => (
+              <button key={a} type="button" onClick={() => toggleAmenity(a)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-500 text-white">
+                {a} ✕
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input className="input" placeholder="Add something else..." value={customAmenity}
+              onChange={(e) => setCustomAmenity(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomAmenity(); } }} />
+            <button type="button" onClick={addCustomAmenity} className="btn-secondary text-sm shrink-0">+ Add</button>
+          </div>
+        </div>
+
+        <div>
           <label className="label">Description</label>
           <textarea className="input" rows={3} placeholder="Describe your PG..."
             value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </div>
-
-        <Field label="Amenities (comma separated)" field="amenities" form={form} setForm={setForm} placeholder="WiFi, Food, AC, Laundry, Parking" />
 
         <div>
           <label className="label">House Rules</label>
