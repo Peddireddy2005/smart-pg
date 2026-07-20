@@ -164,13 +164,15 @@ export default function PGDetails() {
           </div>
         )}
 
-        <div className="card p-5 bg-gradient-to-r from-brand-500 to-brand-600 border-0 text-white text-center mb-8">
-          <p className="font-heading font-bold text-lg mb-1">Interested in this PG?</p>
-          <p className="text-orange-100 text-sm mb-4">Create an account to connect with the owner.</p>
-          <Link to="/signup" className="bg-white text-brand-600 font-semibold px-6 py-2.5 rounded-xl hover:bg-orange-50 transition inline-block">
-            Get Started Free
-          </Link>
-        </div>
+        {!user && (
+          <div className="card p-5 bg-gradient-to-r from-brand-500 to-brand-600 border-0 text-white text-center mb-8">
+            <p className="font-heading font-bold text-lg mb-1">Interested in this PG?</p>
+            <p className="text-orange-100 text-sm mb-4">Create an account to connect with the owner.</p>
+            <Link to="/signup" className="bg-white text-brand-600 font-semibold px-6 py-2.5 rounded-xl hover:bg-orange-50 transition inline-block">
+              Get Started Free
+            </Link>
+          </div>
+        )}
 
         <h2 className="font-heading font-bold text-xl text-slate-900 dark:text-white mb-4">Reviews ({reviews.length})</h2>
 
