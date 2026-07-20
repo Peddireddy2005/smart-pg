@@ -85,7 +85,7 @@ function PaymentPanel({ payment, onDone, onCancel }) {
 
   return (
     <div className="mt-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl p-4">
-      {!method ? (
+      {!method && (
         <div className="space-y-3">
           <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Choose Payment Method</p>
           <div className="space-y-2">
