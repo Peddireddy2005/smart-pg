@@ -19,10 +19,11 @@ const inviteSchema = new mongoose.Schema(
 
 const genCode = () => crypto.randomBytes(4).toString("hex").toUpperCase(); // e.g. "A1B2C3D4"
 
-inviteSchema.pre("validate", function (next) {
+// No `next` argument — plain synchronous hook. Avoids any ambiguity in how
+// Mongoose/Kareem decides whether to invoke this as callback-style vs sync.
+inviteSchema.pre("validate", function () {
   if (!this.token) this.token = crypto.randomBytes(20).toString("hex");
   if (!this.code) this.code = genCode();
-  next();
 });
 
 module.exports = mongoose.model("Invite", inviteSchema);
