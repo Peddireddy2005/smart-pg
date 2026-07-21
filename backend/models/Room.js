@@ -6,6 +6,7 @@ const roomSchema = new mongoose.Schema(
     capacity: { type: Number, required: true, min: 1 },
     occupancy: { type: Number, default: 0, min: 0 },
     rent: { type: Number, required: true, min: 0 },
+    depositAmount: { type: Number, default: 0, min: 0 },
     pg: { type: mongoose.Schema.Types.ObjectId, ref: "PG", required: true },
     residents: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     floor: { type: String, default: "" },

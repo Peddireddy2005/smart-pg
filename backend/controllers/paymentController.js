@@ -31,11 +31,14 @@ const generateMonthlyRents = asyncHandler(async (req, res) => {
 
   for (const room of rooms) {
     for (const resident of room.residents) {
-      const exists = await Payment.findOne({ resident: resident._id, room: room._id, month, year });
+      // Filtered by type "rent" so a one-time deposit charge created in the
+      // same month (e.g. on move-in day) never blocks that month's rent
+      // record from being generated.
+      const exists = await Payment.findOne({ resident: resident._id, room: room._id, month, year, type: "rent" });
       if (!exists) {
         payments.push({
           resident: resident._id, room: room._id, pg: pgId,
-          amount: room.rent, month, year, dueDate,
+          amount: room.rent, month, year, dueDate, type: "rent",
         });
       }
     }
@@ -65,7 +68,10 @@ const generateMonthlyRents = asyncHandler(async (req, res) => {
 // --- Resident: payment method picker ---------------------------------------
 
 // Returns which methods this owner accepts, the convenience fee, and (if UPI
-// is enabled) the owner's UPI ID + an auto-generated QR code.
+// is enabled) the owner's UPI ID + an auto-generated QR code. UPI is offered
+// as a method whenever the owner has enabled it — even if they haven't set a
+// UPI ID yet — so a resident who paid the owner directly can still submit
+// proof; the QR/ID block just won't render in that case.
 const getPaymentOptions = asyncHandler(async (req, res) => {
   const payment = await Payment.findById(req.params.id).populate({ path: "pg", populate: { path: "owner", select: "name businessName upiId paymentMethodsEnabled" } });
   if (!payment) throw new AppError("Payment record not found", 404);
@@ -88,7 +94,7 @@ const getPaymentOptions = asyncHandler(async (req, res) => {
     convenienceFee: enabled.razorpay ? CONVENIENCE_FEE : 0,
     methods: {
       razorpay: Boolean(enabled.razorpay),
-      upi: Boolean(enabled.upi && owner.upiId),
+      upi: Boolean(enabled.upi),
       cash: Boolean(enabled.cash),
     },
     upi,

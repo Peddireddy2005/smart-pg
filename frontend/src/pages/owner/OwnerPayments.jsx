@@ -122,6 +122,7 @@ export default function OwnerPayments() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
+                    {r.type && r.type !== "rent" && <span className="badge-purple">{r.type === "deposit" ? "Deposit" : r.type}</span>}
                     <span className="badge-purple uppercase">{r.paymentMethod}</span>
                     <span className="font-heading font-bold text-slate-800 dark:text-white">₹{(r.paymentMethod === "cash" ? r.cashAmount : r.amount)?.toLocaleString()}</span>
                   </div>
@@ -208,6 +209,7 @@ export default function OwnerPayments() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      {p.type && p.type !== "rent" && <span className="badge-purple">{p.type === "deposit" ? "Deposit" : p.type}</span>}
                       <span className="font-semibold text-slate-700 dark:text-slate-200">₹{p.amount.toLocaleString()}</span>
                       {p.paymentMethod && p.status === "paid" && <span className="text-xs text-slate-400 capitalize">{p.paymentMethod}</span>}
                       <span className={p.status === "paid" ? "badge-green" : p.status === "pending_approval" ? "badge-purple" : p.status === "rejected" ? "badge-red" : "badge-yellow"}>

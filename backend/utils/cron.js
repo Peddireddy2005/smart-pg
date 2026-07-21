@@ -21,11 +21,13 @@ const generateRentsForAllPGs = async () => {
     const rooms = await Room.find({ pg: pg._id }).populate("residents");
     for (const room of rooms) {
       for (const resident of room.residents) {
-        const exists = await Payment.findOne({ resident: resident._id, room: room._id, month, year });
+        // Filtered by type "rent" so a one-time deposit charge doesn't mask
+        // that month's rent from ever being generated.
+        const exists = await Payment.findOne({ resident: resident._id, room: room._id, month, year, type: "rent" });
         if (!exists) {
           const payment = await Payment.create({
             resident: resident._id, room: room._id, pg: pg._id,
-            amount: room.rent, month, year, dueDate: new Date(year, month - 1, 5),
+            amount: room.rent, month, year, dueDate: new Date(year, month - 1, 5), type: "rent",
           });
           created += 1;
           await notify({

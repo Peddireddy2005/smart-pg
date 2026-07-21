@@ -165,7 +165,9 @@ export default function OwnerPGDetails() {
                     <p className="text-xs text-emerald-600">{room.capacity - room.occupancy} vacant</p>
                   </div>
                 </div>
-                <p className="text-brand-500 font-semibold mb-3">₹{room.rent.toLocaleString()}/mo</p>
+                <p className="text-brand-500 font-semibold">₹{room.rent.toLocaleString()}/mo</p>
+                {room.depositAmount > 0 && <p className="text-xs text-slate-400 mb-3">+ ₹{room.depositAmount.toLocaleString()} deposit on move-in</p>}
+                {!(room.depositAmount > 0) && <div className="mb-3" />}
 
                 {room.residents?.length > 0 ? (
                   <div className="space-y-2">

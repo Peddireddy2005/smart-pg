@@ -122,17 +122,24 @@ function PaymentPanel({ payment, onDone, onCancel }) {
         </div>
       )}
 
-      {method === "upi" && options.upi && (
+      {method === "upi" && (
         <div className="space-y-3">
           <button onClick={() => setMethod(null)} className="text-xs text-slate-400 hover:text-slate-600">← Change method</button>
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 text-center">
-            <p className="text-xs text-slate-400">Owner Name</p>
-            <p className="font-semibold text-slate-800 dark:text-white mb-2">{options.upi.ownerName}</p>
-            <img src={options.upi.qrDataUrl} alt="UPI QR" className="w-40 h-40 mx-auto rounded-xl border border-gray-100 dark:border-slate-700 mb-2" />
-            <p className="text-xs text-slate-400">UPI ID</p>
-            <p className="font-mono text-sm text-slate-700 dark:text-slate-200 mb-2">{options.upi.upiId}</p>
-            <button type="button" onClick={() => { navigator.clipboard.writeText(options.upi.upiId); toast.success("UPI ID copied"); }} className="btn-secondary text-xs">Copy UPI ID</button>
-          </div>
+
+          {options.upi ? (
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 text-center">
+              <p className="text-xs text-slate-400">Owner Name</p>
+              <p className="font-semibold text-slate-800 dark:text-white mb-2">{options.upi.ownerName}</p>
+              <img src={options.upi.qrDataUrl} alt="UPI QR" className="w-40 h-40 mx-auto rounded-xl border border-gray-100 dark:border-slate-700 mb-2" />
+              <p className="text-xs text-slate-400">UPI ID</p>
+              <p className="font-mono text-sm text-slate-700 dark:text-slate-200 mb-2">{options.upi.upiId}</p>
+              <button type="button" onClick={() => { navigator.clipboard.writeText(options.upi.upiId); toast.success("UPI ID copied"); }} className="btn-secondary text-xs">Copy UPI ID</button>
+            </div>
+          ) : (
+            <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/40 rounded-xl p-4 text-sm text-amber-700 dark:text-amber-300">
+              Your owner hasn't set up a UPI QR code in Smart PG yet. Pay them directly using whatever UPI ID they've shared with you, then upload proof of the transaction below.
+            </div>
+          )}
 
           <div>
             <label className="label">Upload Screenshot *</label>
@@ -234,7 +241,11 @@ export default function ResidentPayments() {
                         <p className="text-slate-500 dark:text-slate-400 text-sm">Room {p.room?.roomNumber} · {MONTHS[p.month - 1]} {p.year}</p>
                         {p.dueDate && <p className="text-xs text-amber-600 mt-0.5">Due by {new Date(p.dueDate).toLocaleDateString()}</p>}
                         <p className="font-heading text-2xl font-bold text-amber-700 dark:text-amber-400 mt-1">₹{p.amount.toLocaleString()}</p>
-                        <span className={`${STATUS_BADGE[p.status]} mt-1 inline-block`}>{STATUS_LABEL[p.status]}</span>
+                        {p.note && <p className="text-xs text-slate-400 mt-0.5">{p.note}</p>}
+                        <div className="flex gap-1.5 mt-1 flex-wrap">
+                          {p.type && p.type !== "rent" && <span className="badge-purple">{p.type === "deposit" ? "Security Deposit" : p.type}</span>}
+                          <span className={STATUS_BADGE[p.status]}>{STATUS_LABEL[p.status]}</span>
+                        </div>
                         {p.status === "rejected" && p.rejectionReason && <p className="text-xs text-red-500 mt-1">Reason: {p.rejectionReason}</p>}
                       </div>
                       {p.status !== "pending_approval" && (
@@ -261,6 +272,7 @@ export default function ResidentPayments() {
                     <tr className="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700">
                       <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Month</th>
                       <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Room</th>
+                      <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Type</th>
                       <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Amount</th>
                       <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Method</th>
                       <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Verified</th>
@@ -273,6 +285,7 @@ export default function ResidentPayments() {
                       <tr key={p._id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                         <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-200">{MONTHS[p.month - 1]} {p.year}</td>
                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{p.room?.roomNumber}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400 capitalize">{p.type === "deposit" ? "Deposit" : "Rent"}</td>
                         <td className="px-4 py-3 font-semibold text-slate-800 dark:text-white">₹{p.amount.toLocaleString()}</td>
                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400 capitalize">{p.paymentMethod || "—"}</td>
                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{p.verifiedBy === "automatic" ? "Automatic" : "By Owner"}</td>

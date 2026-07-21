@@ -35,6 +35,15 @@ export default function PGListings() {
   const [localGender, setLocalGender] = useState(gender);
   const [localAmenities, setLocalAmenities] = useState(new Set(amenities.map((a) => a.key)));
 
+  // IMPORTANT: this depends on the *whole* searchParams string, not just the
+  // handful of individual values pulled out above. Previously the amenity
+  // checkboxes (food/ac/parking/wifi/laundry) weren't part of this
+  // function's dependency list, so toggling ONLY an amenity (with no other
+  // field changed) never recreated `load`, and the effect below never
+  // re-ran — the filter button looked like it did nothing. Keying off the
+  // full query string fixes that for every filter combination.
+  const queryKey = searchParams.toString();
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -53,7 +62,8 @@ export default function PGListings() {
     } finally {
       setLoading(false);
     }
-  }, [search, city, minRent, maxRent, gender, sort, page]); // eslint-disable-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryKey]);
 
   useEffect(() => { load(); }, [load]);
 

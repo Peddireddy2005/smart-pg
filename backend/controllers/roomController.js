@@ -6,6 +6,7 @@ const AppError = require("../utils/AppError");
 const logger = require("../config/logger");
 const { notify } = require("../utils/notify");
 const { logActivity } = require("../utils/activityLog");
+const { chargeResidentOnJoin } = require("../utils/chargeOnJoin");
 
 const recalcRentRange = async (pgId) => {
   const allRooms = await Room.find({ pg: pgId });
@@ -33,7 +34,7 @@ const updateRoom = asyncHandler(async (req, res) => {
   if (!room) throw new AppError("Room not found", 404);
   if (room.pg.owner.toString() !== req.user._id.toString()) throw new AppError("Not authorized", 403);
 
-  const { roomNumber, capacity, rent, floor, type, status } = req.body;
+  const { roomNumber, capacity, rent, depositAmount, floor, type, status } = req.body;
   if (capacity !== undefined && Number(capacity) < room.occupancy) {
     throw new AppError(`Capacity can't be less than current occupancy (${room.occupancy})`, 400);
   }
@@ -42,6 +43,7 @@ const updateRoom = asyncHandler(async (req, res) => {
     ...(roomNumber !== undefined && { roomNumber }),
     ...(capacity !== undefined && { capacity }),
     ...(rent !== undefined && { rent }),
+    ...(depositAmount !== undefined && { depositAmount }),
     ...(floor !== undefined && { floor }),
     ...(type !== undefined && { type }),
     ...(status !== undefined && { status }),
@@ -106,6 +108,8 @@ const allocateResident = asyncHandler(async (req, res) => {
   });
 
   await logActivity({ owner: req.user._id, actor: req.user._id, action: "Resident Added", entityType: "Room", entityId: room._id, details: `${resident.email} -> Room ${room.roomNumber}` });
+
+  await chargeResidentOnJoin({ resident, room, pg: room.pg, ownerId: req.user._id });
 
   logger.info(`[ALLOCATE] Done. Room: ${room.roomNumber} Resident: ${resident.email}`);
   const populated = await Room.findById(room._id)

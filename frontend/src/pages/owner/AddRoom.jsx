@@ -15,7 +15,7 @@ const deriveRoomType = (capacity) => {
 
 export default function AddRoom() {
   const { pgId } = useParams();
-  const [form, setForm] = useState({ roomNumber: "", capacity: "", rent: "", floor: "" });
+  const [form, setForm] = useState({ roomNumber: "", capacity: "", rent: "", depositAmount: "", floor: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -67,6 +67,11 @@ export default function AddRoom() {
             <label className="label">Monthly Rent (₹) *</label>
             <input className="input" type="number" placeholder="8500" required min={0} value={form.rent} onChange={(e) => setForm({ ...form, rent: e.target.value })} />
           </div>
+        </div>
+
+        <div>
+          <label className="label">Security Deposit (₹) <span className="text-slate-400 normal-case font-normal">(optional, one-time, charged on move-in)</span></label>
+          <input className="input" type="number" placeholder="e.g. 10000" min={0} value={form.depositAmount} onChange={(e) => setForm({ ...form, depositAmount: e.target.value })} />
         </div>
 
         <button disabled={loading} className="btn-primary w-full justify-center">

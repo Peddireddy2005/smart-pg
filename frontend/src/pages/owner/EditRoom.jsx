@@ -24,6 +24,7 @@ export default function EditRoom() {
       if (room) {
         setForm({
           roomNumber: room.roomNumber, capacity: room.capacity, rent: room.rent,
+          depositAmount: room.depositAmount || 0,
           floor: room.floor || "", status: room.status || "available",
           occupancy: room.occupancy,
         });
@@ -84,6 +85,10 @@ export default function EditRoom() {
             <label className="label">Monthly Rent (₹) *</label>
             <input className="input" type="number" required min={0} value={form.rent} onChange={(e) => setForm({ ...form, rent: e.target.value })} />
           </div>
+        </div>
+        <div>
+          <label className="label">Security Deposit (₹) <span className="text-slate-400 normal-case font-normal">(one-time, only charged once per resident)</span></label>
+          <input className="input" type="number" min={0} value={form.depositAmount} onChange={(e) => setForm({ ...form, depositAmount: e.target.value })} />
         </div>
         <button disabled={loading} className="btn-primary w-full justify-center">
           {loading ? "Saving..." : "Save Changes"}

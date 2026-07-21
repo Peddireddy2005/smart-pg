@@ -8,6 +8,7 @@ const AppError = require("../utils/AppError");
 const logger = require("../config/logger");
 const { notify } = require("../utils/notify");
 const { logActivity } = require("../utils/activityLog");
+const { chargeResidentOnJoin } = require("../utils/chargeOnJoin");
 
 const INVITE_EXPIRE_HOURS = 72;
 
@@ -93,6 +94,8 @@ const claimInvite = asyncHandler(async (req, res) => {
     link: "/owner/dashboard",
   });
   await logActivity({ owner: invite.createdBy, actor: resident._id, action: "Resident Auto-Assigned (Invite)", entityType: "Room", entityId: room._id, details: `${resident.email} -> Room ${room.roomNumber}` });
+
+  await chargeResidentOnJoin({ resident, room, pg: room.pg, ownerId: room.pg.owner });
 
   const populatedRoom = await Room.findById(room._id).populate("residents", "name email phone photoUrl");
   res.json({ message: "Joined successfully", room: populatedRoom });

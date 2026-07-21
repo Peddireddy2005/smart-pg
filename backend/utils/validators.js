@@ -42,6 +42,7 @@ const roomValidator = [
   body("roomNumber").trim().notEmpty().withMessage("Room number is required"),
   body("capacity").isInt({ min: 1 }).withMessage("Capacity must be at least 1"),
   body("rent").isFloat({ min: 0 }).withMessage("Rent must be a positive number"),
+  body("depositAmount").optional().isFloat({ min: 0 }).withMessage("Deposit must be a positive number"),
 ];
 
 const allocateValidator = [
