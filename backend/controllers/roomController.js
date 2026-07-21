@@ -57,7 +57,7 @@ const updateRoom = asyncHandler(async (req, res) => {
 
 const getRoomsByPG = asyncHandler(async (req, res) => {
   const rooms = await Room.find({ pg: req.params.pgId })
-    .populate("residents", "name email phone photoUrl isVerified invitedByOwner");
+    .populate("residents", "name email phone photoUrl isVerified invitedByOwner vacateNotice");
   res.json(rooms);
 });
 
@@ -97,6 +97,7 @@ const allocateResident = asyncHandler(async (req, res) => {
     assignedPG: room.pg._id,
     assignedRoom: room._id,
     moveInDate: new Date(),
+    vacateNotice: { requested: false, noticeGivenAt: null, plannedDate: null },
   });
 
   await notify({
@@ -113,27 +114,100 @@ const allocateResident = asyncHandler(async (req, res) => {
 
   logger.info(`[ALLOCATE] Done. Room: ${room.roomNumber} Resident: ${resident.email}`);
   const populated = await Room.findById(room._id)
-    .populate("residents", "name email phone photoUrl isVerified invitedByOwner");
+    .populate("residents", "name email phone photoUrl isVerified invitedByOwner vacateNotice");
   res.json(populated);
 });
 
-const removeResident = asyncHandler(async (req, res) => {
+// Owner: vacate a resident from a room. Unlike a hard "remove", this
+// preserves the resident's stay on lastPG/lastRoom so a separate
+// "Vacated Residents" list can still show their details afterwards.
+const vacateResident = asyncHandler(async (req, res) => {
   const { residentId } = req.body;
-  const room = await Room.findById(req.params.roomId);
+  const room = await Room.findById(req.params.roomId).populate("pg");
   if (!room) throw new AppError("Room not found", 404);
+  if (room.pg.owner.toString() !== req.user._id.toString()) throw new AppError("Not authorized", 403);
 
   room.residents = room.residents.filter((r) => r.toString() !== residentId);
   room.occupancy = Math.max(0, room.occupancy - 1);
   if (room.occupancy < room.capacity) room.status = "available";
   await room.save();
 
-  await User.findByIdAndUpdate(residentId, { assignedPG: null, assignedRoom: null, moveOutDate: new Date() });
+  await User.findByIdAndUpdate(residentId, {
+    lastPG: room.pg._id,
+    lastRoom: room._id,
+    assignedPG: null,
+    assignedRoom: null,
+    moveOutDate: new Date(),
+    vacateNotice: { requested: false, noticeGivenAt: null, plannedDate: null },
+  });
 
-  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Resident Removed", entityType: "Room", entityId: room._id, details: `Room ${room.roomNumber}` });
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Resident Vacated", entityType: "Room", entityId: room._id, details: `Room ${room.roomNumber}` });
 
   const populated = await Room.findById(room._id)
-    .populate("residents", "name email phone photoUrl isVerified invitedByOwner");
+    .populate("residents", "name email phone photoUrl isVerified invitedByOwner vacateNotice");
   res.json(populated);
+});
+
+// Resident: give notice they intend to vacate. Must be at least 30 days out.
+const submitVacateNotice = asyncHandler(async (req, res) => {
+  const { plannedDate } = req.body;
+  const user = await User.findById(req.user._id);
+  if (!user.assignedRoom) throw new AppError("You are not currently assigned to a room", 400);
+  if (!plannedDate) throw new AppError("Please provide a planned move-out date", 400);
+
+  const planned = new Date(plannedDate);
+  const minDate = new Date();
+  minDate.setHours(0, 0, 0, 0);
+  minDate.setDate(minDate.getDate() + 30);
+
+  if (isNaN(planned.getTime()) || planned < minDate) {
+    throw new AppError("Vacate notice must be given at least 30 days in advance", 400);
+  }
+
+  user.vacateNotice = { requested: true, noticeGivenAt: new Date(), plannedDate: planned };
+  await user.save();
+
+  const room = await Room.findById(user.assignedRoom).populate("pg");
+  if (room?.pg) {
+    await notify({
+      user: room.pg.owner,
+      title: "Vacate Notice",
+      message: `${user.name} plans to vacate Room ${room.roomNumber} on ${planned.toLocaleDateString()}.`,
+      type: "system",
+      link: "/owner/pg/" + room.pg._id,
+    });
+    await logActivity({ owner: room.pg.owner, actor: user._id, action: "Vacate Notice Given", entityType: "Room", entityId: room._id, details: `${user.email} — planned ${planned.toDateString()}` });
+  }
+
+  res.json({ message: "Vacate notice submitted", vacateNotice: user.vacateNotice });
+});
+
+const cancelVacateNotice = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  user.vacateNotice = { requested: false, noticeGivenAt: null, plannedDate: null };
+  await user.save();
+  res.json({ message: "Vacate notice cancelled" });
+});
+
+const getOwnerVacateRequests = asyncHandler(async (req, res) => {
+  const pgs = await PG.find({ owner: req.user._id });
+  const pgIds = pgs.map((p) => p._id);
+  const residents = await User.find({ role: "resident", assignedPG: { $in: pgIds }, "vacateNotice.requested": true })
+    .select("name email phone photoUrl assignedPG assignedRoom vacateNotice")
+    .populate("assignedPG", "name")
+    .populate("assignedRoom", "roomNumber");
+  res.json(residents);
+});
+
+const getOwnerVacatedResidents = asyncHandler(async (req, res) => {
+  const pgs = await PG.find({ owner: req.user._id });
+  const pgIds = pgs.map((p) => p._id);
+  const residents = await User.find({ role: "resident", lastPG: { $in: pgIds }, moveOutDate: { $ne: null } })
+    .select("name email phone photoUrl lastPG lastRoom moveInDate moveOutDate")
+    .populate("lastPG", "name city")
+    .populate("lastRoom", "roomNumber")
+    .sort({ moveOutDate: -1 });
+  res.json(residents);
 });
 
 const getMyRoom = asyncHandler(async (req, res) => {
@@ -179,6 +253,7 @@ const deleteRoom = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  createRoom, updateRoom, getRoomsByPG, allocateResident, removeResident,
+  createRoom, updateRoom, getRoomsByPG, allocateResident, vacateResident,
   getMyRoom, getResidentProfile, deleteRoom,
+  submitVacateNotice, cancelVacateNotice, getOwnerVacateRequests, getOwnerVacatedResidents,
 };

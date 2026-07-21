@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useLocation } from "react-router-dom";
 import api from "../services/api";
 import StarRating from "../components/StarRating";
 
@@ -13,6 +13,17 @@ const AMENITY_FILTERS = [
 
 export default function PGListings() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+
+  // When rendered inside the owner/resident dashboard shells, keep the
+  // layout minimal (no full-page background) and route PG links to the
+  // matching nested path so the person never leaves their dashboard.
+  const embedded = location.pathname.startsWith("/owner") || location.pathname.startsWith("/resident");
+  const basePath = location.pathname.startsWith("/owner")
+    ? "/owner/pg-listings"
+    : location.pathname.startsWith("/resident")
+    ? "/resident/pg-listings"
+    : "/pgs";
 
   const [pgs, setPGs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,13 +46,6 @@ export default function PGListings() {
   const [localGender, setLocalGender] = useState(gender);
   const [localAmenities, setLocalAmenities] = useState(new Set(amenities.map((a) => a.key)));
 
-  // IMPORTANT: this depends on the *whole* searchParams string, not just the
-  // handful of individual values pulled out above. Previously the amenity
-  // checkboxes (food/ac/parking/wifi/laundry) weren't part of this
-  // function's dependency list, so toggling ONLY an amenity (with no other
-  // field changed) never recreated `load`, and the effect below never
-  // re-ran — the filter button looked like it did nothing. Keying off the
-  // full query string fixes that for every filter combination.
   const queryKey = searchParams.toString();
 
   const load = useCallback(async () => {
@@ -107,8 +111,8 @@ export default function PGListings() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] dark:bg-slate-900">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className={embedded ? "" : "min-h-screen bg-[#f8f7f4] dark:bg-slate-900"}>
+      <div className={embedded ? "" : "max-w-6xl mx-auto px-6 py-8"}>
         <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-6">Browse PGs</h1>
 
         <form onSubmit={applyFilters} className="card p-5 mb-4">
@@ -174,7 +178,7 @@ export default function PGListings() {
           <>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
               {pgs.map((pg) => (
-                <Link key={pg._id} to={`/pgs/${pg._id}`} className="card overflow-hidden hover:border-brand-200 transition group">
+                <Link key={pg._id} to={`${basePath}/${pg._id}`} className="card overflow-hidden hover:border-brand-200 transition group">
                   {pg.images?.[0] ? (
                     <img src={pg.images[0].url} alt={pg.name} className="w-full h-40 object-cover" />
                   ) : (
@@ -220,7 +224,7 @@ export default function PGListings() {
                   const p = i + 1;
                   const current = { search, city, minRent, maxRent, gender, sort, page: String(p) };
                   return (
-                    <Link key={p} to={`/pgs?${new URLSearchParams(current)}`}
+                    <Link key={p} to={`${basePath}?${new URLSearchParams(current)}`}
                       className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition ${page === p ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300"}`}>
                       {p}
                     </Link>

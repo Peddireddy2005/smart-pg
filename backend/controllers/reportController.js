@@ -37,7 +37,7 @@ const getReportSummary = asyncHandler(async (req, res) => {
     month: MONTHS[month - 1], year,
     totalPGs: data.pgs.length, totalRooms: data.rooms.length, totalResidents: data.residents.length,
     totalCollected: data.totalCollected, totalPending: data.totalPending, occupancyPct: data.occupancyPct,
-    openComplaints: data.complaints.filter((c) => c.status !== "resolved" && c.status !== "closed").length,
+    openComplaints: data.complaints.filter((c) => c.status !== "resolved").length,
     totalComplaints: data.complaints.length,
   });
 });
@@ -62,7 +62,7 @@ const downloadReportPDF = asyncHandler(async (req, res) => {
   doc.text(`PGs: ${data.pgs.length}    Rooms: ${data.rooms.length}    Residents: ${data.residents.length}`);
   doc.text(`Occupancy: ${data.occupancyPct}%`);
   doc.text(`Collected: Rs. ${data.totalCollected.toLocaleString()}    Pending: Rs. ${data.totalPending.toLocaleString()}`);
-  doc.text(`Complaints: ${data.complaints.length} total, ${data.complaints.filter((c) => c.status !== "resolved" && c.status !== "closed").length} open`);
+  doc.text(`Complaints: ${data.complaints.length} total, ${data.complaints.filter((c) => c.status !== "resolved").length} open`);
   doc.moveDown(1);
 
   doc.fontSize(13).text("Payments", { underline: true }).moveDown(0.3);

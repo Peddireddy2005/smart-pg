@@ -11,12 +11,16 @@ export default function JoinPG() {
   const [invite, setInvite] = useState(null);
   const [error, setError] = useState("");
   const [hasIdProof, setHasIdProof] = useState(true);
+  const [assignedPG, setAssignedPG] = useState(null);
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [joining, setJoining] = useState(false);
 
   useEffect(() => {
     api.get("/auth/me")
-      .then(({ data }) => setHasIdProof(Boolean(data.idProofType && data.idProofUrl)))
+      .then(({ data }) => {
+        setHasIdProof(Boolean(data.idProofType && data.idProofUrl));
+        setAssignedPG(data.assignedPG || null);
+      })
       .catch(() => {})
       .finally(() => setCheckingProfile(false));
   }, []);
@@ -51,6 +55,22 @@ export default function JoinPG() {
       setJoining(false);
     }
   };
+
+  if (!checkingProfile && assignedPG) {
+    return (
+      <div className="max-w-lg">
+        <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-6">Join a PG</h1>
+        <div className="card p-6 text-center">
+          <p className="text-4xl mb-3">🏠</p>
+          <p className="text-slate-700 dark:text-slate-200 font-medium">You're already assigned to a PG.</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">
+            To join a different PG, first submit a vacate notice from{" "}
+            <Link to="/resident/room" className="text-brand-500 underline">My Room</Link> and wait for your owner to process it.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg">

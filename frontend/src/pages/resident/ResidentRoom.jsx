@@ -1,20 +1,56 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../../services/api";
 import { getSession } from "../../services/authService";
+import { submitVacateNotice, cancelVacateNotice } from "../../services/roomService";
 
 export default function ResidentRoom() {
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [vacateNotice, setVacateNotice] = useState({ requested: false, plannedDate: null });
+  const [plannedDate, setPlannedDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const user = getSession();
+
+  const loadProfile = () => {
+    api.get("/auth/me").then(({ data }) => {
+      setVacateNotice(data.vacateNotice || { requested: false, plannedDate: null });
+    }).catch(() => {});
+  };
 
   useEffect(() => {
     api.get("/rooms/my")
       .then(({ data }) => setRoom(data))
       .catch((err) => setError(err.response?.data?.message || "No room assigned"))
       .finally(() => setLoading(false));
+    loadProfile();
   }, []);
+
+  const handleVacateNotice = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const res = await submitVacateNotice(plannedDate);
+      setVacateNotice(res.vacateNotice);
+      toast.success("Vacate notice submitted");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to submit notice");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancelNotice = async () => {
+    try {
+      await cancelVacateNotice();
+      setVacateNotice({ requested: false, plannedDate: null });
+      toast.success("Vacate notice cancelled");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed");
+    }
+  };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full" /></div>;
 
@@ -33,6 +69,7 @@ export default function ResidentRoom() {
 
   const pg = room.pg;
   const occupancyPct = Math.round((room.occupancy / room.capacity) * 100);
+  const minVacateDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   return (
     <div>
@@ -79,7 +116,7 @@ export default function ResidentRoom() {
         <p className="text-xs text-slate-400 mt-1">{room.capacity - room.occupancy} bed(s) vacant</p>
       </div>
 
-      <div className="card p-5">
+      <div className="card p-5 mb-4">
         <p className="label mb-3">Roommates ({room.residents?.length || 0})</p>
         {room.residents?.length > 0 ? (
           <div className="space-y-3">
@@ -106,8 +143,32 @@ export default function ResidentRoom() {
         ) : <p className="text-slate-400 text-sm">No roommates yet.</p>}
       </div>
 
+      <div className="card p-5 mb-4">
+        <p className="label mb-2">Moving Out?</p>
+        {vacateNotice?.requested ? (
+          <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/40 rounded-xl p-4">
+            <p className="text-amber-800 dark:text-amber-300 text-sm font-medium">
+              Vacate notice submitted for {new Date(vacateNotice.plannedDate).toLocaleDateString()}
+            </p>
+            <p className="text-amber-600 dark:text-amber-400 text-xs mt-1">Your owner has been notified and will process this closer to the date.</p>
+            <button onClick={handleCancelNotice} className="btn-secondary text-xs mt-3">Cancel Notice</button>
+          </div>
+        ) : (
+          <form onSubmit={handleVacateNotice} className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="label">Planned move-out date</label>
+              <input type="date" className="input w-auto" required value={plannedDate}
+                min={minVacateDate}
+                onChange={(e) => setPlannedDate(e.target.value)} />
+            </div>
+            <button disabled={submitting} className="btn-primary">{submitting ? "Submitting..." : "Notify Owner"}</button>
+            <p className="text-xs text-slate-400 w-full">Must be given at least 30 days before your planned move-out date.</p>
+          </form>
+        )}
+      </div>
+
       <div className="mt-4">
-        <Link to={`/pgs/${pg?._id}`} className="text-brand-500 text-sm hover:underline">View public PG listing & reviews →</Link>
+        <Link to={`/resident/pg-listings/${pg?._id}`} className="text-brand-500 text-sm hover:underline">View public PG listing & reviews →</Link>
       </div>
     </div>
   );

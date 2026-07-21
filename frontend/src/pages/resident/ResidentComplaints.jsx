@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 
-const STATUS_STYLES = { pending: "badge-yellow", "in-progress": "badge-blue", resolved: "badge-green", closed: "badge-gray" };
+const STATUS_STYLES = { pending: "badge-yellow", "in-progress": "badge-blue", resolved: "badge-green" };
 const CATEGORIES = ["Electrical", "Plumbing", "Internet", "Cleaning", "Food", "Others"];
 const CATEGORY_ICON = { Electrical: "⚡", Plumbing: "🚰", Internet: "📶", Cleaning: "🧹", Food: "🍽️", Others: "📌" };
 

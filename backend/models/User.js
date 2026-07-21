@@ -57,6 +57,21 @@ const userSchema = new mongoose.Schema(
     moveInDate: { type: Date },
     moveOutDate: { type: Date },
 
+    // History preserved after a resident vacates — the owner "Vacate" action
+    // clears assignedPG/assignedRoom but keeps these so the resident's past
+    // stay isn't lost and can be shown in a "Vacated Residents" list.
+    lastPG: { type: mongoose.Schema.Types.ObjectId, ref: "PG", default: null },
+    lastRoom: { type: mongoose.Schema.Types.ObjectId, ref: "Room", default: null },
+
+    // Resident-submitted notice that they intend to move out. Must be given
+    // at least 30 days ahead of the planned date. Cleared once the owner
+    // processes the vacate, or if the resident cancels it themselves.
+    vacateNotice: {
+      requested: { type: Boolean, default: false },
+      noticeGivenAt: { type: Date, default: null },
+      plannedDate: { type: Date, default: null },
+    },
+
     isVerified: { type: Boolean, default: false },
     invitedByOwner: { type: Boolean, default: false },
 

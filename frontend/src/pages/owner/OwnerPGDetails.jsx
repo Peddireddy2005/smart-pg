@@ -16,7 +16,7 @@ export default function OwnerPGDetails() {
   const [genMonth, setGenMonth] = useState(now.getMonth() + 1);
   const [genYear, setGenYear] = useState(now.getFullYear());
   const [generating, setGenerating] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState(null);
+  const [confirmVacate, setConfirmVacate] = useState(null);
   const [confirmDeleteRoom, setConfirmDeleteRoom] = useState(null);
   const [qrModal, setQrModal] = useState(null); // { qrDataUrl, joinUrl, code }
 
@@ -30,16 +30,16 @@ export default function OwnerPGDetails() {
     loadRooms().catch(() => {});
   }, [id, loadRooms]);
 
-  const handleRemoveResident = async () => {
-    const { roomId, residentId } = confirmRemove;
+  const handleVacateResident = async () => {
+    const { roomId, residentId } = confirmVacate;
     try {
-      const { data } = await api.post(`/rooms/${roomId}/remove`, { residentId });
+      const { data } = await api.post(`/rooms/${roomId}/vacate`, { residentId });
       setRooms((prev) => prev.map((r) => (r._id === roomId ? data : r)));
-      toast.success("Resident removed");
+      toast.success("Resident vacated");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed");
     } finally {
-      setConfirmRemove(null);
+      setConfirmVacate(null);
     }
   };
 
@@ -183,7 +183,14 @@ export default function OwnerPGDetails() {
                             <p className="text-xs text-slate-400 truncate">{resident.email}</p>
                           </div>
                         </Link>
-                        <button onClick={() => setConfirmRemove({ roomId: room._id, residentId: resident._id })} className="btn-danger text-xs shrink-0 ml-2">Remove</button>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          {resident.vacateNotice?.requested && (
+                            <span className="badge-yellow text-xs whitespace-nowrap">
+                              Vacating {new Date(resident.vacateNotice.plannedDate).toLocaleDateString()}
+                            </span>
+                          )}
+                          <button onClick={() => setConfirmVacate({ roomId: room._id, residentId: resident._id })} className="btn-danger text-xs">Vacate</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -218,8 +225,8 @@ export default function OwnerPGDetails() {
         </div>
       )}
 
-      <ConfirmModal open={!!confirmRemove} title="Remove this resident?" description="They will be unassigned from this room and PG."
-        confirmLabel="Remove" onCancel={() => setConfirmRemove(null)} onConfirm={handleRemoveResident} />
+      <ConfirmModal open={!!confirmVacate} title="Vacate this resident?" description="They'll be unassigned from this room and PG, but their stay history will be kept and shown under Vacated Residents."
+        confirmLabel="Vacate" onCancel={() => setConfirmVacate(null)} onConfirm={handleVacateResident} />
       <ConfirmModal open={!!confirmDeleteRoom} title="Delete this room?" description="All residents must be removed first."
         confirmLabel="Delete Room" onCancel={() => setConfirmDeleteRoom(null)} onConfirm={handleDeleteRoom} />
 

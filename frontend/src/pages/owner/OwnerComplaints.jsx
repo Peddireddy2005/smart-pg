@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import { getOwnerStaff } from "../../services/staffService";
 
-const STATUS_STYLES = { pending: "badge-yellow", "in-progress": "badge-blue", resolved: "badge-green", closed: "badge-gray" };
+const STATUS_STYLES = { pending: "badge-yellow", "in-progress": "badge-blue", resolved: "badge-green" };
 const PRIORITY_STYLES = { low: "badge-gray", medium: "badge-yellow", high: "badge-red" };
 const CATEGORY_ICON = { Electrical: "⚡", Plumbing: "🚰", Internet: "📶", Cleaning: "🧹", Food: "🍽️", Others: "📌" };
 
@@ -47,7 +47,7 @@ export default function OwnerComplaints() {
       <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-6">Complaints</h1>
 
       <div className="flex gap-2 mb-6 flex-wrap">
-        {["all", "pending", "in-progress", "resolved", "closed"].map((s) => (
+        {["all", "pending", "in-progress", "resolved"].map((s) => (
           <button key={s} onClick={() => setFilter(s)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition capitalize ${filter === s ? "bg-slate-900 text-white" : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300"}`}>
             {s === "all" ? "All" : s}
@@ -103,7 +103,6 @@ export default function OwnerComplaints() {
                     <option value="pending">Pending</option>
                     <option value="in-progress">In Progress</option>
                     <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
                   </select>
                   <select value={c.assignedStaff?._id || ""} onChange={(e) => assignStaff(c._id, e.target.value)} className="input w-auto text-sm">
                     <option value="">Assign staff...</option>

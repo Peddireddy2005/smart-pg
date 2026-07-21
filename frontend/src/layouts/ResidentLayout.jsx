@@ -4,22 +4,21 @@ import NotificationBell from "../components/NotificationBell";
 import ThemeToggle from "../components/ThemeToggle";
 import { clearSession, getSession } from "../services/authService";
 
-const links = [
-  { to: "/resident/dashboard", icon: "⊞", label: "Dashboard" },
-  { to: "/resident/room", icon: "🏠", label: "My Room" },
-  { to: "/resident/join", icon: "🔗", label: "Join a PG" },
-  { to: "/pgs", icon: "🔍", label: "Browse PGs" },
-  { to: "/resident/payments", icon: "₹", label: "Rent" },
-  { to: "/resident/complaints", icon: "⚑", label: "Complaints" },
-  { to: "/resident/announcements", icon: "📣", label: "Announcements" },
-  { to: "/resident/visitors", icon: "🚪", label: "Visitors" },
-  { to: "/resident/profile", icon: "◉", label: "My Profile" },
-];
-
 export default function ResidentLayout() {
   const user = getSession();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+
+  const links = [
+    { to: "/resident/dashboard", icon: "⊞", label: "Dashboard" },
+    { to: "/resident/room", icon: "🏠", label: "My Room" },
+    ...(user?.assignedPG ? [] : [{ to: "/resident/join", icon: "🔗", label: "Join a PG" }]),
+    { to: "/resident/pg-listings", icon: "🔍", label: "Browse PGs" },
+    { to: "/resident/payments", icon: "₹", label: "Rent" },
+    { to: "/resident/complaints", icon: "⚑", label: "Complaints" },
+    { to: "/resident/announcements", icon: "📣", label: "Announcements" },
+    { to: "/resident/profile", icon: "◉", label: "My Profile" },
+  ];
 
   const logout = () => {
     clearSession();

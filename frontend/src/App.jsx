@@ -31,9 +31,8 @@ import ResidentProfile from "./pages/owner/ResidentProfile";
 import AllocateResident from "./pages/owner/AllocateResident";
 import OwnerAnnouncements from "./pages/owner/Announcements";
 import OwnerStaff from "./pages/owner/Staff";
-import OwnerVisitors from "./pages/owner/Visitors";
+import OwnerVacatedResidents from "./pages/owner/VacatedResidents";
 import OwnerExpenses from "./pages/owner/Expenses";
-import OwnerInventory from "./pages/owner/Inventory";
 import OwnerReports from "./pages/owner/Reports";
 import OwnerActivityLogs from "./pages/owner/ActivityLogs";
 import OwnerSettings from "./pages/owner/Settings";
@@ -47,7 +46,6 @@ import ResidentPayments from "./pages/resident/ResidentPayments";
 import ResidentComplaints from "./pages/resident/ResidentComplaints";
 import MyProfile from "./pages/resident/MyProfile";
 import ResidentAnnouncements from "./pages/resident/Announcements";
-import ResidentVisitors from "./pages/resident/Visitors";
 
 // Admin pages (spec §27 — Future / minimal)
 import AdminLayout from "./layouts/AdminLayout";
@@ -106,13 +104,14 @@ export default function App() {
             <Route path="pg/:pgId/add-room" element={<AddRoom />} />
             <Route path="pg/:pgId/room/:roomId/edit" element={<EditRoom />} />
             <Route path="pg/:pgId/allocate" element={<AllocateResident />} />
+            <Route path="pg-listings" element={<PGListings />} />
+            <Route path="pg-listings/:id" element={<PGDetails />} />
             <Route path="payments" element={<OwnerPayments />} />
             <Route path="complaints" element={<OwnerComplaints />} />
             <Route path="announcements" element={<OwnerAnnouncements />} />
             <Route path="staff" element={<OwnerStaff />} />
-            <Route path="visitors" element={<OwnerVisitors />} />
+            <Route path="vacated" element={<OwnerVacatedResidents />} />
             <Route path="expenses" element={<OwnerExpenses />} />
-            <Route path="inventory" element={<OwnerInventory />} />
             <Route path="reports" element={<OwnerReports />} />
             <Route path="activity-logs" element={<OwnerActivityLogs />} />
             <Route path="settings" element={<OwnerSettings />} />
@@ -125,10 +124,11 @@ export default function App() {
             <Route path="dashboard" element={<ResidentDashboard />} />
             <Route path="room" element={<ResidentRoom />} />
             <Route path="join" element={<JoinPG />} />
+            <Route path="pg-listings" element={<PGListings />} />
+            <Route path="pg-listings/:id" element={<PGDetails />} />
             <Route path="payments" element={<ResidentPayments />} />
             <Route path="complaints" element={<ResidentComplaints />} />
             <Route path="announcements" element={<ResidentAnnouncements />} />
-            <Route path="visitors" element={<ResidentVisitors />} />
             <Route path="profile" element={<MyProfile />} />
           </Route>
 

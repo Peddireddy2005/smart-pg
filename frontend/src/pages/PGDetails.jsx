@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../services/api";
 import { getPGReviews, submitReview, deleteReview } from "../services/reviewService";
@@ -8,6 +8,14 @@ import StarRating from "../components/StarRating";
 
 export default function PGDetails() {
   const { id } = useParams();
+  const location = useLocation();
+  const embedded = location.pathname.startsWith("/owner") || location.pathname.startsWith("/resident");
+  const backTo = location.pathname.startsWith("/owner/pg-listings")
+    ? "/owner/pg-listings"
+    : location.pathname.startsWith("/resident/pg-listings")
+    ? "/resident/pg-listings"
+    : "/pgs";
+
   const [pg, setPG] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -72,17 +80,24 @@ export default function PGDetails() {
   const images = pg.images || [];
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] dark:bg-slate-900">
-      <div className="bg-white dark:bg-slate-800 border-b dark:border-slate-700 px-6 py-4 flex items-center gap-4">
-        <Link to="/pgs" className="text-slate-500 dark:text-slate-400 hover:text-slate-800 text-sm">← Back</Link>
-        <span className="text-slate-300 dark:text-slate-600">|</span>
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-brand-500 rounded flex items-center justify-center text-white font-bold text-xs">S</div>
-          <span className="font-heading font-bold text-slate-900 dark:text-white">Smart PG</span>
-        </Link>
-      </div>
+    <div className={embedded ? "" : "min-h-screen bg-[#f8f7f4] dark:bg-slate-900"}>
+      {!embedded && (
+        <div className="bg-white dark:bg-slate-800 border-b dark:border-slate-700 px-6 py-4 flex items-center gap-4">
+          <Link to={backTo} className="text-slate-500 dark:text-slate-400 hover:text-slate-800 text-sm">← Back</Link>
+          <span className="text-slate-300 dark:text-slate-600">|</span>
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-brand-500 rounded flex items-center justify-center text-white font-bold text-xs">S</div>
+            <span className="font-heading font-bold text-slate-900 dark:text-white">Smart PG</span>
+          </Link>
+        </div>
+      )}
+      {embedded && (
+        <div className="mb-4">
+          <Link to={backTo} className="text-slate-400 hover:text-slate-600 text-sm">← Back to Browse PGs</Link>
+        </div>
+      )}
 
-      <div className="max-w-3xl mx-auto px-6 py-8">
+      <div className={embedded ? "" : "max-w-3xl mx-auto px-6 py-8"}>
         {images.length > 0 ? (
           <div className="mb-6">
             <img src={images[imgIdx].url} alt={pg.name} className="w-full h-72 object-cover rounded-2xl border border-gray-100 dark:border-slate-700 mb-2" />
