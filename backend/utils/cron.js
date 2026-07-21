@@ -4,7 +4,6 @@ const Room = require("../models/Room");
 const Payment = require("../models/Payment");
 const logger = require("../config/logger");
 const { notify } = require("./notify");
-const { sendEmail, templates } = require("./sendEmail");
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -21,11 +20,9 @@ const generateRentsForAllPGs = async () => {
     const rooms = await Room.find({ pg: pg._id }).populate("residents");
     for (const room of rooms) {
       for (const resident of room.residents) {
-        // Filtered by type "rent" so a one-time deposit charge doesn't mask
-        // that month's rent from ever being generated.
         const exists = await Payment.findOne({ resident: resident._id, room: room._id, month, year, type: "rent" });
         if (!exists) {
-          const payment = await Payment.create({
+          await Payment.create({
             resident: resident._id, room: room._id, pg: pg._id,
             amount: room.rent, month, year, dueDate: new Date(year, month - 1, 5), type: "rent",
           });
@@ -44,28 +41,12 @@ const generateRentsForAllPGs = async () => {
   logger.info(`[CRON] Auto-generated ${created} rent records`);
 };
 
-const sendDueReminders = async () => {
-  logger.info("[CRON] Sending rent due reminders");
-  const now = new Date();
-  const pending = await Payment.find({
-    status: "pending", month: now.getMonth() + 1, year: now.getFullYear(),
-  }).populate("resident", "name email");
-
-  for (const p of pending) {
-    if (!p.resident?.email) continue;
-    await sendEmail({
-      to: p.resident.email,
-      subject: "Rent Due Reminder — Smart PG",
-      html: templates.paymentDue(p.resident.name, p.amount, MONTHS[p.month - 1], p.year),
-    });
-  }
-  logger.info(`[CRON] Sent ${pending.length} reminder emails`);
-};
-
+// Email-based due reminders have been removed (no SMTP available). In-app
+// notifications are already sent the moment rent is generated, which covers
+// the "reminder" need without email.
 const initCronJobs = () => {
   cron.schedule("0 6 1 * *", () => generateRentsForAllPGs().catch((e) => logger.error(`[CRON] ${e.message}`)));
-  cron.schedule("0 9 * * *", () => sendDueReminders().catch((e) => logger.error(`[CRON] ${e.message}`)));
   logger.info("[CRON] Scheduled jobs initialized");
 };
 
-module.exports = { initCronJobs, generateRentsForAllPGs, sendDueReminders };
+module.exports = { initCronJobs, generateRentsForAllPGs };

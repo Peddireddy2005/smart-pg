@@ -7,6 +7,7 @@ import GoogleAuthButton from "../components/GoogleAuthButton";
 
 export default function Signup() {
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "resident" });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -16,15 +17,9 @@ export default function Signup() {
     setError(""); setLoading(true);
     try {
       const { data } = await api.post("/auth/signup", form);
-      if (data.token) {
-        // Owner-invited residents are activated and logged in immediately —
-        // no verification step needed.
-        saveSession(data);
-        navigate(data.role === "owner" ? "/owner/dashboard" : "/resident/dashboard");
-        return;
-      }
-      toast.success(data.message || "Check your email for a verification code");
-      navigate("/verify-email", { state: { email: form.email } });
+      saveSession(data);
+      toast.success("Welcome to Smart PG!");
+      navigate(data.role === "owner" ? "/owner/dashboard" : "/resident/dashboard");
     } catch (err) {
       const message = err.response?.data?.message || "Signup failed";
       setError(message);
@@ -81,8 +76,13 @@ export default function Signup() {
             </div>
             <div>
               <label className="label">Password</label>
-              <input className="input" type="password" placeholder="Min 6 characters" required minLength={6}
-                value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              <div className="relative">
+                <input className="input pr-12" type={showPassword ? "text" : "password"} placeholder="Min 6 characters" required minLength={6}
+                  value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-lg" tabIndex={-1}>
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
             </div>
             <button disabled={loading} className="btn-primary w-full justify-center mt-2">
               {loading ? "Creating..." : "Create Account"}

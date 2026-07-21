@@ -4,9 +4,7 @@ const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generateToken");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
-const { sendEmail, templates } = require("../utils/sendEmail");
 const { verifyGoogleToken, isConfigured: googleConfigured } = require("../config/googleOAuth");
-const { generateOtp, verifyOtp } = require("../utils/otp");
 const logger = require("../config/logger");
 
 const formatUser = (user) => ({
@@ -35,6 +33,8 @@ const formatUser = (user) => ({
   token: generateToken(user._id),
 });
 
+// No SMTP available in this build, so accounts are verified immediately on
+// signup instead of via an emailed OTP code.
 const signup = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
   logger.info(`[SIGNUP] Attempt: ${email} ${role}`);
@@ -63,14 +63,11 @@ const signup = asyncHandler(async (req, res) => {
     email: email.toLowerCase(),
     password: hashed,
     role,
-    isVerified: false,
+    isVerified: true,
   });
-  logger.info(`[SIGNUP] User created (pending verification): ${user._id} ${email}`);
+  logger.info(`[SIGNUP] User created: ${user._id} ${email}`);
 
-  const { code } = await generateOtp(user.email, "verify-email");
-  await sendEmail({ to: user.email, subject: "Verify your Smart PG account", html: templates.otpVerification(user.name, code) });
-
-  res.status(201).json({ email: user.email, message: "We've emailed you a verification code." });
+  res.status(201).json(formatUser(user));
 });
 
 const login = asyncHandler(async (req, res) => {
@@ -87,8 +84,6 @@ const login = asyncHandler(async (req, res) => {
 
   const match = await bcrypt.compare(password, user.password);
   if (!match) throw new AppError("Invalid credentials", 400);
-
-  if (!user.isVerified) throw new AppError("Please verify your email before logging in", 403);
 
   logger.info(`[LOGIN] Success: ${email} ${user.role}`);
   res.json(formatUser(user));
@@ -137,25 +132,23 @@ const changePassword = asyncHandler(async (req, res) => {
   res.json({ message: "Password updated successfully" });
 });
 
+// No email delivery available — the reset link is returned directly in the
+// response instead of being emailed. The frontend displays/copies it.
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email: email.toLowerCase() });
 
-  const genericResponse = { message: "If that email exists, a reset link has been sent." };
-  if (!user) return res.json(genericResponse);
+  if (!user) {
+    return res.json({ message: "If that email exists, a reset link has been generated.", resetUrl: null });
+  }
 
   const resetToken = user.createResetToken();
   await user.save({ validateBeforeSave: false });
 
   const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password/${resetToken}`;
-  await sendEmail({
-    to: user.email,
-    subject: "Reset your Smart PG password",
-    html: templates.resetPassword(user.name, resetUrl),
-  });
 
   logger.info(`[FORGOT PASSWORD] Reset link generated for ${user.email}`);
-  res.json(genericResponse);
+  res.json({ message: "Reset link generated.", resetUrl });
 });
 
 const resetPassword = asyncHandler(async (req, res) => {
@@ -222,58 +215,15 @@ const googleAuth = asyncHandler(async (req, res) => {
       isVerified: true,
     });
     logger.info(`[GOOGLE AUTH] New account created: ${email} (${requestedRole})`);
-    sendEmail({ to: user.email, subject: "Welcome to Smart PG", html: templates.welcome(user.name) });
   }
 
   res.json(formatUser(user));
-});
-
-// --- Mobile OTP auth (spec section 2: no-password login for both roles) ---
-
-const verifyEmail = asyncHandler(async (req, res) => {
-  const { email, code } = req.body;
-
-  const user = await User.findOne({ email: email.toLowerCase() })
-    .populate("assignedPG", "name address city")
-    .populate("assignedRoom", "roomNumber rent capacity occupancy");
-  if (!user) throw new AppError("No account found with that email", 404);
-  if (!user.isActive) throw new AppError("This account has been deactivated", 403);
-
-  if (!user.isVerified) {
-    const ok = await verifyOtp(email, code, "verify-email");
-    if (!ok) throw new AppError("Invalid or expired verification code", 400);
-
-    user.isVerified = true;
-    await user.save();
-    logger.info(`[VERIFY EMAIL] Verified: ${email}`);
-
-    sendEmail({ to: user.email, subject: "Welcome to Smart PG", html: templates.welcome(user.name) });
-  }
-
-  res.json(formatUser(user));
-});
-
-const resendOtp = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  const user = await User.findOne({ email: email.toLowerCase() });
-  // Always return a generic response so this can't be used to enumerate accounts.
-  const generic = { message: "If that account needs verification, we've emailed a new code." };
-  if (!user || user.isVerified) return res.json(generic);
-
-  const { code } = await generateOtp(user.email, "verify-email");
-  await sendEmail({ to: user.email, subject: "Your Smart PG verification code", html: templates.otpVerification(user.name, code) });
-  logger.info(`[RESEND OTP] Sent to ${user.email}`);
-
-  res.json(generic);
 });
 
 module.exports = {
   signup,
   login,
   googleAuth,
-  verifyEmail,
-  resendOtp,
   getMe,
   updateProfile,
   changePassword,

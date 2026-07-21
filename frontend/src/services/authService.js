@@ -7,11 +7,6 @@ export const login = (payload) => api.post("/auth/login", payload).then((r) => r
 export const googleAuth = (credential, role) =>
   api.post("/auth/google", { credential, role }).then((r) => r.data);
 
-export const verifyEmail = (email, code) =>
-  api.post("/auth/verify-email", { email, code }).then((r) => r.data);
-
-export const resendOtp = (email) => api.post("/auth/resend-otp", { email }).then((r) => r.data);
-
 export const forgotPassword = (email) =>
   api.post("/auth/forgot-password", { email }).then((r) => r.data);
 
@@ -21,19 +16,25 @@ export const resetPassword = (token, password) =>
 export const changePassword = (currentPassword, newPassword) =>
   api.put("/auth/change-password", { currentPassword, newPassword }).then((r) => r.data);
 
-export const saveSession = (data) => {
-  localStorage.setItem("user", JSON.stringify(data));
+// `remember` controls where the session lives: localStorage persists across
+// browser restarts, sessionStorage clears once the tab/browser closes.
+export const saveSession = (data, remember = true) => {
+  const storage = remember ? localStorage : sessionStorage;
+  const other = remember ? sessionStorage : localStorage;
+  other.removeItem("user");
+  storage.setItem("user", JSON.stringify(data));
   window.dispatchEvent(new Event("storage"));
 };
 
 export const clearSession = () => {
   localStorage.removeItem("user");
+  sessionStorage.removeItem("user");
   window.dispatchEvent(new Event("storage"));
 };
 
 export const getSession = () => {
   try {
-    return JSON.parse(localStorage.getItem("user"));
+    return JSON.parse(localStorage.getItem("user") || sessionStorage.getItem("user"));
   } catch {
     return null;
   }

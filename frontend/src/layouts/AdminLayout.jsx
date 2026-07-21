@@ -1,4 +1,5 @@
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import ThemeToggle from "../components/ThemeToggle";
 import { clearSession, getSession } from "../services/authService";
 
@@ -13,6 +14,10 @@ const links = [
 export default function AdminLayout() {
   const user = getSession();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
   const logout = () => {
     clearSession();
@@ -21,7 +26,12 @@ export default function AdminLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f8f7f4] dark:bg-slate-900">
-      <aside className="w-60 bg-slate-950 flex flex-col shrink-0">
+      {mobileOpen && (
+        <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setMobileOpen(false)} />
+      )}
+
+      <aside className={`fixed md:static inset-y-0 left-0 z-40 w-60 bg-slate-950 flex flex-col shrink-0
+        transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         <div className="px-4 py-5 border-b border-white/10 flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0">A</div>
           <span className="text-white font-heading font-bold text-lg">Smart PG Admin</span>
@@ -45,11 +55,14 @@ export default function AdminLayout() {
           </button>
         </div>
       </aside>
-      <main className="flex-1 overflow-y-auto">
-        <div className="flex items-center justify-end px-6 md:px-8 py-3 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <main className="flex-1 overflow-y-auto w-full">
+        <div className="flex items-center justify-between px-4 md:px-8 py-3 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 -ml-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300" aria-label="Open menu">
+            <span className="text-xl">☰</span>
+          </button>
           <ThemeToggle dark={false} />
         </div>
-        <div className="p-6 md:p-8 page-fade">
+        <div className="p-4 md:p-8 page-fade">
           <Outlet />
         </div>
       </main>

@@ -6,7 +6,6 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const logger = require("../config/logger");
 const { notify } = require("../utils/notify");
-const { sendEmail, templates } = require("../utils/sendEmail");
 const { uploadBuffer } = require("../config/cloudinary");
 const { logActivity } = require("../utils/activityLog");
 
@@ -92,11 +91,6 @@ const updateComplaintStatus = asyncHandler(async (req, res) => {
       type: "complaint",
       link: "/resident/complaints",
     });
-    sendEmail({
-      to: complaint.resident.email,
-      subject: "Complaint Status Updated",
-      html: templates.complaintUpdate(complaint.resident.name, complaint.title, status),
-    });
   }
 
   const pg = await PG.findById(complaint.pg._id);
@@ -106,7 +100,6 @@ const updateComplaintStatus = asyncHandler(async (req, res) => {
   res.json(complaint);
 });
 
-// Owner: assign in-house staff to handle a complaint (spec §9 workflow: Complaint -> Owner -> Assign -> Resolved -> Closed)
 const assignComplaintStaff = asyncHandler(async (req, res) => {
   const { staffId } = req.body;
   const complaint = await Complaint.findById(req.params.id).populate("pg").populate("resident", "name email");

@@ -8,6 +8,7 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
@@ -44,12 +45,17 @@ export default function ResetPassword() {
           <form onSubmit={submit} className="space-y-5">
             <div>
               <label className="label">New Password</label>
-              <input type="password" required minLength={6} className="input" placeholder="Min 6 characters"
-                value={password} onChange={(e) => setPassword(e.target.value)} />
+              <div className="relative">
+                <input type={showPassword ? "text" : "password"} required minLength={6} className="input pr-12" placeholder="Min 6 characters"
+                  value={password} onChange={(e) => setPassword(e.target.value)} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-lg" tabIndex={-1}>
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
             </div>
             <div>
               <label className="label">Confirm Password</label>
-              <input type="password" required minLength={6} className="input" placeholder="Repeat password"
+              <input type={showPassword ? "text" : "password"} required minLength={6} className="input" placeholder="Repeat password"
                 value={confirm} onChange={(e) => setConfirm(e.target.value)} />
             </div>
             <button type="submit" disabled={loading} className="btn-primary w-full justify-center">

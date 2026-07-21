@@ -10,6 +10,7 @@ export default function Login() {
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,16 +20,10 @@ export default function Login() {
     setError("");
     try {
       const { data } = await api.post("/auth/login", form);
-      saveSession(data);
+      saveSession(data, rememberMe);
       navigate(data.role === "owner" ? "/owner/dashboard" : "/resident/dashboard");
     } catch (err) {
-      const status = err.response?.status;
       const message = err.response?.data?.message || "Login failed";
-      if (status === 403 && /verify/i.test(message)) {
-        toast.error(message);
-        navigate("/verify-email", { state: { email: form.email } });
-        return;
-      }
       setError(message);
       toast.error(message);
     } finally {
@@ -80,11 +75,16 @@ export default function Login() {
               <div className="relative">
                 <input type={showPassword ? "text" : "password"} required className="input pr-12" placeholder="••••••••"
                   value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-lg">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-lg" tabIndex={-1}>
                   {showPassword ? "🙈" : "👁️"}
                 </button>
               </div>
             </div>
+
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+              Remember me on this device
+            </label>
 
             <button type="submit" disabled={loading} className="btn-primary w-full justify-center">
               {loading ? "Signing In..." : "Sign In"}
