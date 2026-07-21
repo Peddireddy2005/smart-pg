@@ -10,6 +10,7 @@ export default function JoinPG() {
   const [looking, setLooking] = useState(false);
   const [invite, setInvite] = useState(null);
   const [error, setError] = useState("");
+  const [hasPersonalDetails, setHasPersonalDetails] = useState(true);
   const [hasIdProof, setHasIdProof] = useState(true);
   const [assignedPG, setAssignedPG] = useState(null);
   const [checkingProfile, setCheckingProfile] = useState(true);
@@ -18,6 +19,7 @@ export default function JoinPG() {
   useEffect(() => {
     api.get("/auth/me")
       .then(({ data }) => {
+        setHasPersonalDetails(Boolean(data.phone && data.emergencyContact && data.emergencyPhone));
         setHasIdProof(Boolean(data.idProofType && data.idProofUrl));
         setAssignedPG(data.assignedPG || null);
       })
@@ -50,11 +52,14 @@ export default function JoinPG() {
     } catch (err) {
       const message = err.response?.data?.message || "Failed to join";
       toast.error(message);
+      if (/personal details/i.test(message)) setHasPersonalDetails(false);
       if (/ID verification/i.test(message)) setHasIdProof(false);
     } finally {
       setJoining(false);
     }
   };
+
+  const canJoin = hasPersonalDetails && hasIdProof;
 
   if (!checkingProfile && assignedPG) {
     return (
@@ -76,7 +81,17 @@ export default function JoinPG() {
     <div className="max-w-lg">
       <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-6">Join a PG</h1>
 
-      {!checkingProfile && !hasIdProof && (
+      {!checkingProfile && !hasPersonalDetails && (
+        <div className="card p-4 mb-5 bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-900/40">
+          <p className="text-amber-800 dark:text-amber-300 text-sm font-medium">⚠️ Complete your personal details first</p>
+          <p className="text-amber-700 dark:text-amber-400 text-sm mt-1">
+            Owners require your phone number and an emergency contact before you can join a room.{" "}
+            <Link to="/resident/profile" className="underline font-medium">Fill them in under My Profile</Link>.
+          </p>
+        </div>
+      )}
+
+      {!checkingProfile && hasPersonalDetails && !hasIdProof && (
         <div className="card p-4 mb-5 bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-900/40">
           <p className="text-amber-800 dark:text-amber-300 text-sm font-medium">⚠️ Complete your ID verification first</p>
           <p className="text-amber-700 dark:text-amber-400 text-sm mt-1">
@@ -120,12 +135,12 @@ export default function JoinPG() {
             <button onClick={() => { setInvite(null); setCode(""); }} className="btn-secondary">
               ← Try another code
             </button>
-            <button disabled={joining || !hasIdProof} onClick={handleJoin} className="btn-primary">
+            <button disabled={joining || !canJoin} onClick={handleJoin} className="btn-primary">
               {joining ? "Joining..." : "Join This Room"}
             </button>
           </div>
-          {!hasIdProof && (
-            <p className="text-amber-600 text-xs mt-3">Complete ID verification in your profile to enable joining.</p>
+          {!canJoin && (
+            <p className="text-amber-600 text-xs mt-3">Complete your personal details and ID verification in your profile to enable joining.</p>
           )}
         </div>
       )}

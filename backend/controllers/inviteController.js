@@ -66,6 +66,12 @@ const claimInvite = asyncHandler(async (req, res) => {
   const resident = await User.findById(req.user._id);
   if (resident.role !== "resident") throw new AppError("Only residents can join via invite", 400);
   if (resident.assignedRoom) throw new AppError("You are already assigned to a room", 400);
+
+  // Personal details must be filled in before joining a room — not just ID
+  // proof. Checked first since it's the more basic requirement.
+  if (!resident.phone || !resident.emergencyContact || !resident.emergencyPhone) {
+    throw new AppError("Please complete your personal details (phone, emergency contact) in My Profile before joining a PG", 400);
+  }
   if (!resident.idProofType || !resident.idProofUrl) {
     throw new AppError("Please complete your ID verification in My Profile before joining a PG", 400);
   }

@@ -271,6 +271,7 @@ export default function ResidentPayments() {
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700">
                       <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Month</th>
+                      <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">PG</th>
                       <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Room</th>
                       <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Type</th>
                       <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Amount</th>
@@ -284,6 +285,7 @@ export default function ResidentPayments() {
                     {paid.map((p) => (
                       <tr key={p._id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                         <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-200">{MONTHS[p.month - 1]} {p.year}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{p.pg?.name || "—"}</td>
                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{p.room?.roomNumber}</td>
                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400 capitalize">{p.type === "deposit" ? "Deposit" : "Rent"}</td>
                         <td className="px-4 py-3 font-semibold text-slate-800 dark:text-white">₹{p.amount.toLocaleString()}</td>

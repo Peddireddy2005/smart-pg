@@ -199,11 +199,17 @@ const getOwnerVacateRequests = asyncHandler(async (req, res) => {
   res.json(residents);
 });
 
+// Includes the resident's personal/ID details now, not just name/contact —
+// so the "Vacated Residents" list can link through to a full profile.
 const getOwnerVacatedResidents = asyncHandler(async (req, res) => {
   const pgs = await PG.find({ owner: req.user._id });
   const pgIds = pgs.map((p) => p._id);
   const residents = await User.find({ role: "resident", lastPG: { $in: pgIds }, moveOutDate: { $ne: null } })
-    .select("name email phone photoUrl lastPG lastRoom moveInDate moveOutDate")
+    .select(
+      "name email phone photoUrl lastPG lastRoom moveInDate moveOutDate " +
+      "emergencyContact emergencyPhone address occupation college company " +
+      "idProofType idProofNumber idProofUrl isVerified"
+    )
     .populate("lastPG", "name city")
     .populate("lastRoom", "roomNumber")
     .sort({ moveOutDate: -1 });
@@ -221,18 +227,32 @@ const getMyRoom = asyncHandler(async (req, res) => {
   res.json(room);
 });
 
+// Owner: full profile for a resident, including vacated/past residents.
+// Fixed authorization bug — previously, if `assignedPG` was null (true for
+// EVERY vacated or never-assigned resident), the ownership check silently
+// short-circuited and let any owner view any such resident's full profile.
+// Now checks both current (assignedPG) and past (lastPG) association.
 const getResidentProfile = asyncHandler(async (req, res) => {
   const resident = await User.findById(req.params.residentId)
     .select("-password")
     .populate("assignedPG", "name city")
-    .populate("assignedRoom", "roomNumber");
+    .populate("assignedRoom", "roomNumber")
+    .populate("lastPG", "name city")
+    .populate("lastRoom", "roomNumber");
 
   if (!resident) throw new AppError("Resident not found", 404);
   if (resident.role !== "resident") throw new AppError("Not a resident", 400);
 
   const ownerPGs = await PG.find({ owner: req.user._id });
   const ownerPGIds = ownerPGs.map((p) => p._id.toString());
-  if (resident.assignedPG && !ownerPGIds.includes(resident.assignedPG._id?.toString())) {
+
+  const currentPGId = resident.assignedPG?._id?.toString();
+  const pastPGId = resident.lastPG?._id?.toString();
+  const belongsToOwner =
+    (currentPGId && ownerPGIds.includes(currentPGId)) ||
+    (pastPGId && ownerPGIds.includes(pastPGId));
+
+  if (!belongsToOwner) {
     throw new AppError("This resident is not in your PG", 403);
   }
 

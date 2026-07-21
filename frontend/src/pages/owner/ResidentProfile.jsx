@@ -30,6 +30,10 @@ export default function ResidentProfile() {
 
   if (!resident) return null;
 
+  const isVacated = !resident.assignedPG && !!resident.moveOutDate;
+  const pg = resident.assignedPG || resident.lastPG;
+  const room = resident.assignedRoom || resident.lastRoom;
+
   const fields = [
     { label: "Email", value: resident.email },
     { label: "Phone", value: resident.phone || "—" },
@@ -37,9 +41,10 @@ export default function ResidentProfile() {
     { label: "Emergency Phone", value: resident.emergencyPhone || "—" },
     { label: "Home Address", value: resident.address || "—" },
     { label: "Occupation", value: resident.occupation || "—" },
-    { label: "Assigned PG", value: resident.assignedPG?.name || "—" },
-    { label: "Room", value: resident.assignedRoom?.roomNumber ? `Room ${resident.assignedRoom.roomNumber}` : "—" },
+    { label: isVacated ? "Last PG" : "Assigned PG", value: pg?.name || "—" },
+    { label: isVacated ? "Last Room" : "Room", value: room?.roomNumber ? `Room ${room.roomNumber}` : "—" },
     { label: "Move-in Date", value: resident.moveInDate ? new Date(resident.moveInDate).toLocaleDateString() : "—" },
+    ...(isVacated ? [{ label: "Move-out Date", value: resident.moveOutDate ? new Date(resident.moveOutDate).toLocaleDateString() : "—" }] : []),
     { label: "Member Since", value: new Date(resident.createdAt).toLocaleDateString() },
   ];
 
@@ -59,6 +64,7 @@ export default function ResidentProfile() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1 flex-wrap">
               <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">{resident.name}</h1>
+              {isVacated && <span className="badge-gray">Vacated</span>}
               {resident.isVerified ? <span className="badge-green">✓ Verified</span> : <span className="badge-yellow">Guest</span>}
               {resident.authProvider === "google" && <span className="badge-blue">Google Account</span>}
             </div>
