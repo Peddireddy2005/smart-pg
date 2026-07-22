@@ -1,23 +1,27 @@
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import {
+  LayoutGrid, BarChart3, Search, IndianRupee, Flag, Megaphone, Wrench,
+  DoorOpen, Wallet, FileText, History, Settings, Menu, ChevronLeft, ChevronRight, Power,
+} from "lucide-react";
 import NotificationBell from "../components/NotificationBell";
 import GlobalSearch from "../components/GlobalSearch";
 import ThemeToggle from "../components/ThemeToggle";
 import { clearSession, getSession } from "../services/authService";
 
 const links = [
-  { to: "/owner/dashboard", icon: "⊞", label: "Dashboard" },
-  { to: "/owner/analytics", icon: "📊", label: "Analytics" },
-  { to: "/owner/pg-listings", icon: "🔍", label: "Browse PGs" },
-  { to: "/owner/payments", icon: "₹", label: "Payments" },
-  { to: "/owner/complaints", icon: "⚑", label: "Complaints" },
-  { to: "/owner/announcements", icon: "📣", label: "Announcements" },
-  { to: "/owner/staff", icon: "🧑‍🔧", label: "Staff" },
-  { to: "/owner/vacated", icon: "🚪", label: "Vacated Residents" },
-  { to: "/owner/expenses", icon: "💸", label: "Expenses" },
-  { to: "/owner/reports", icon: "📄", label: "Reports" },
-  { to: "/owner/activity-logs", icon: "🕒", label: "Activity Logs" },
-  { to: "/owner/settings", icon: "⚙️", label: "Settings" },
+  { to: "/owner/dashboard", icon: LayoutGrid, label: "Dashboard" },
+  { to: "/owner/analytics", icon: BarChart3, label: "Analytics" },
+  { to: "/owner/pg-listings", icon: Search, label: "Browse PGs" },
+  { to: "/owner/payments", icon: IndianRupee, label: "Payments" },
+  { to: "/owner/complaints", icon: Flag, label: "Complaints" },
+  { to: "/owner/announcements", icon: Megaphone, label: "Announcements" },
+  { to: "/owner/staff", icon: Wrench, label: "Staff" },
+  { to: "/owner/vacated", icon: DoorOpen, label: "Vacated Residents" },
+  { to: "/owner/expenses", icon: Wallet, label: "Expenses" },
+  { to: "/owner/reports", icon: FileText, label: "Reports" },
+  { to: "/owner/activity-logs", icon: History, label: "Activity Logs" },
+  { to: "/owner/settings", icon: Settings, label: "Settings" },
 ];
 
 export default function OwnerLayout() {
@@ -27,7 +31,6 @@ export default function OwnerLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Close the mobile drawer whenever the route changes.
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
   const logout = () => {
@@ -70,10 +73,10 @@ export default function OwnerLayout() {
         )}
 
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {links.map(({ to, icon, label }) => (
+          {links.map(({ to, icon: Icon, label }) => (
             <NavLink key={to} to={to}
               className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}>
-              <span className="text-lg w-5 text-center shrink-0">{icon}</span>
+              <Icon size={18} className="shrink-0" />
               {!collapsed && <span>{label}</span>}
             </NavLink>
           ))}
@@ -81,11 +84,11 @@ export default function OwnerLayout() {
 
         <div className="px-2 py-4 border-t border-white/10 space-y-1">
           <button onClick={() => setCollapsed(!collapsed)} className="sidebar-link w-full hidden md:flex">
-            <span className="text-lg w-5 text-center shrink-0">{collapsed ? "→" : "←"}</span>
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             {!collapsed && <span>Collapse</span>}
           </button>
           <button onClick={logout} className="sidebar-link w-full text-red-400 hover:text-red-300 hover:bg-red-900/20">
-            <span className="text-lg w-5 text-center shrink-0">⏻</span>
+            <Power size={18} />
             {!collapsed && <span>Logout</span>}
           </button>
         </div>
@@ -95,7 +98,7 @@ export default function OwnerLayout() {
         <div className="flex items-center justify-between gap-4 px-4 md:px-8 py-3 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 -ml-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0" aria-label="Open menu">
-              <span className="text-xl">☰</span>
+              <Menu size={20} />
             </button>
             <div className="hidden sm:block flex-1 min-w-0">
               <GlobalSearch />

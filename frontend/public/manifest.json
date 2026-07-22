@@ -1,0 +1,12 @@
+{
+  "name": "Smart PG",
+  "short_name": "Smart PG",
+  "description": "Manage your PG stay — rent, complaints, and more.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f7f4",
+  "theme_color": "#ff7a09",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

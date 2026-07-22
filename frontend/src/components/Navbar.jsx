@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { LayoutGrid } from "lucide-react";
 import { getSession, clearSession } from "../services/authService";
 import ThemeToggle from "./ThemeToggle";
 
@@ -59,7 +60,9 @@ export default function Navbar() {
                   {user.name?.charAt(0).toUpperCase()}
                 </div>
               )}
-              <button onClick={openDashboard} className="btn-primary text-sm py-2 px-4">Dashboard</button>
+              <button onClick={openDashboard} className="btn-primary text-sm py-2 px-4 inline-flex items-center gap-1.5">
+                <LayoutGrid size={15} /> Dashboard
+              </button>
               <button onClick={logout} className="btn-secondary text-sm py-2 px-4">Logout</button>
             </>
           )}

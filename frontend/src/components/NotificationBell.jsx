@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Bell, CreditCard, Flag, Home, Star, Megaphone, DoorOpen, BellRing } from "lucide-react";
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from "../services/notificationService";
 
-const TYPE_ICON = { payment: "💳", complaint: "📢", allocation: "🏠", review: "⭐", system: "🔔", announcement: "📣", visitor: "🚪" };
+const TYPE_ICON = {
+  payment: CreditCard, complaint: Flag, allocation: Home, review: Star,
+  system: BellRing, announcement: Megaphone, visitor: DoorOpen,
+};
 
 export default function NotificationBell({ dark = true }) {
   const [open, setOpen] = useState(false);
@@ -23,7 +27,7 @@ export default function NotificationBell({ dark = true }) {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 60000);
+    const interval = setInterval(load, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -57,7 +61,7 @@ export default function NotificationBell({ dark = true }) {
         onClick={() => setOpen((o) => !o)}
         className={`relative p-2 rounded-xl transition ${dark ? "hover:bg-white/10 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"}`}
       >
-        <span className="text-lg">🔔</span>
+        <Bell size={18} />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -76,21 +80,24 @@ export default function NotificationBell({ dark = true }) {
           {notifications.length === 0 ? (
             <p className="text-slate-400 text-sm p-6 text-center">No notifications yet</p>
           ) : (
-            notifications.map((n) => (
-              <button
-                key={n._id}
-                onClick={() => handleClick(n)}
-                className={`w-full text-left px-4 py-3 border-b dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition flex gap-3 ${!n.isRead ? "bg-brand-50/40 dark:bg-brand-900/10" : ""}`}
-              >
-                <span className="text-lg shrink-0">{TYPE_ICON[n.type] || "🔔"}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 dark:text-white">{n.title}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{n.message}</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{new Date(n.createdAt).toLocaleString()}</p>
-                </div>
-                {!n.isRead && <span className="w-2 h-2 rounded-full bg-brand-500 shrink-0 mt-1.5" />}
-              </button>
-            ))
+            notifications.map((n) => {
+              const Icon = TYPE_ICON[n.type] || BellRing;
+              return (
+                <button
+                  key={n._id}
+                  onClick={() => handleClick(n)}
+                  className={`w-full text-left px-4 py-3 border-b dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition flex gap-3 ${!n.isRead ? "bg-brand-50/40 dark:bg-brand-900/10" : ""}`}
+                >
+                  <Icon size={18} className="shrink-0 text-brand-500 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 dark:text-white">{n.title}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{n.message}</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{new Date(n.createdAt).toLocaleString()}</p>
+                  </div>
+                  {!n.isRead && <span className="w-2 h-2 rounded-full bg-brand-500 shrink-0 mt-1.5" />}
+                </button>
+              );
+            })
           )}
         </div>
       )}

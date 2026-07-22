@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { uploadImage } from "../services/uploadService";
+import { compressImage } from "../utils/compressImage";
 
 export default function ImageUploader({
   value,
@@ -23,7 +24,8 @@ export default function ImageUploader({
     }
     setLoading(true);
     try {
-      const { url } = await uploadImage(file, purpose);
+      const compressed = await compressImage(file);
+      const { url } = await uploadImage(compressed, purpose);
       onChange(url);
       toast.success("Image uploaded");
     } catch (err) {

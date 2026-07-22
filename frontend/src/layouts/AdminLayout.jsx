@@ -1,16 +1,15 @@
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { LayoutGrid, KeyRound, Building2, Menu, Power } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { clearSession, getSession } from "../services/authService";
 
 const links = [
-  { to: "/admin/dashboard", icon: "⊞", label: "Platform Overview" },
-  { to: "/admin/owners", icon: "🔑", label: "Owners" },
-  { to: "/admin/pgs", icon: "🏘️", label: "All PGs" },
+  { to: "/admin/dashboard", icon: LayoutGrid, label: "Platform Overview" },
+  { to: "/admin/owners", icon: KeyRound, label: "Owners" },
+  { to: "/admin/pgs", icon: Building2, label: "All PGs" },
 ];
 
-// Minimal platform-level admin panel — spec §27 explicitly marks this
-// section "(Future)"; kept read-only/basic on purpose.
 export default function AdminLayout() {
   const user = getSession();
   const navigate = useNavigate();
@@ -41,16 +40,16 @@ export default function AdminLayout() {
           <p className="text-slate-400 text-xs">Platform Admin</p>
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1">
-          {links.map(({ to, icon, label }) => (
+          {links.map(({ to, icon: Icon, label }) => (
             <NavLink key={to} to={to} className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}>
-              <span className="text-lg w-5 text-center shrink-0">{icon}</span>
+              <Icon size={18} className="shrink-0" />
               <span>{label}</span>
             </NavLink>
           ))}
         </nav>
         <div className="px-2 py-4 border-t border-white/10">
           <button onClick={logout} className="sidebar-link w-full text-red-400 hover:text-red-300 hover:bg-red-900/20">
-            <span className="text-lg w-5 text-center shrink-0">⏻</span>
+            <Power size={18} />
             <span>Logout</span>
           </button>
         </div>
@@ -58,7 +57,7 @@ export default function AdminLayout() {
       <main className="flex-1 overflow-y-auto w-full">
         <div className="flex items-center justify-between px-4 md:px-8 py-3 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 -ml-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300" aria-label="Open menu">
-            <span className="text-xl">☰</span>
+            <Menu size={20} />
           </button>
           <ThemeToggle dark={false} />
         </div>

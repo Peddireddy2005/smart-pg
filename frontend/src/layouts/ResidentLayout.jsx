@@ -1,5 +1,9 @@
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import {
+  LayoutGrid, Home, Link2, Search, IndianRupee, Flag, Megaphone, CircleUser,
+  Menu, ChevronLeft, ChevronRight, Power,
+} from "lucide-react";
 import NotificationBell from "../components/NotificationBell";
 import ThemeToggle from "../components/ThemeToggle";
 import { clearSession, getSession } from "../services/authService";
@@ -14,24 +18,22 @@ export default function ResidentLayout() {
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
   const links = [
-    { to: "/resident/dashboard", icon: "⊞", label: "Dashboard" },
-    { to: "/resident/room", icon: "🏠", label: "My Room" },
-    ...(user?.assignedPG ? [] : [{ to: "/resident/join", icon: "🔗", label: "Join a PG" }]),
-    { to: "/resident/pg-listings", icon: "🔍", label: "Browse PGs" },
-    { to: "/resident/payments", icon: "₹", label: "Rent" },
-    { to: "/resident/complaints", icon: "⚑", label: "Complaints" },
-    { to: "/resident/announcements", icon: "📣", label: "Announcements" },
-    { to: "/resident/profile", icon: "◉", label: "My Profile" },
+    { to: "/resident/dashboard", icon: LayoutGrid, label: "Dashboard" },
+    { to: "/resident/room", icon: Home, label: "My Room" },
+    ...(user?.assignedPG ? [] : [{ to: "/resident/join", icon: Link2, label: "Join a PG" }]),
+    { to: "/resident/pg-listings", icon: Search, label: "Browse PGs" },
+    { to: "/resident/payments", icon: IndianRupee, label: "Rent" },
+    { to: "/resident/complaints", icon: Flag, label: "Complaints" },
+    { to: "/resident/announcements", icon: Megaphone, label: "Announcements" },
+    { to: "/resident/profile", icon: CircleUser, label: "My Profile" },
   ];
 
-  // The 5 things residents check most often — shown as a bottom tab bar on
-  // phones instead of forcing the side drawer open every time.
   const bottomTabs = [
-    { to: "/resident/dashboard", icon: "⊞", label: "Home" },
-    { to: "/resident/room", icon: "🏠", label: "Room" },
-    { to: "/resident/payments", icon: "₹", label: "Rent" },
-    { to: "/resident/complaints", icon: "⚑", label: "Issues" },
-    { to: "/resident/profile", icon: "◉", label: "Profile" },
+    { to: "/resident/dashboard", icon: LayoutGrid, label: "Home" },
+    { to: "/resident/room", icon: Home, label: "Room" },
+    { to: "/resident/payments", icon: IndianRupee, label: "Rent" },
+    { to: "/resident/complaints", icon: Flag, label: "Issues" },
+    { to: "/resident/profile", icon: CircleUser, label: "Profile" },
   ];
 
   const logout = () => {
@@ -72,10 +74,10 @@ export default function ResidentLayout() {
         )}
 
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {links.map(({ to, icon, label }) => (
+          {links.map(({ to, icon: Icon, label }) => (
             <NavLink key={to} to={to}
               className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}>
-              <span className="text-lg w-5 text-center shrink-0">{icon}</span>
+              <Icon size={18} className="shrink-0" />
               {!collapsed && <span>{label}</span>}
             </NavLink>
           ))}
@@ -83,11 +85,11 @@ export default function ResidentLayout() {
 
         <div className="px-2 py-4 border-t border-white/10 space-y-1">
           <button onClick={() => setCollapsed(!collapsed)} className="sidebar-link w-full hidden md:flex">
-            <span className="text-lg w-5 text-center shrink-0">{collapsed ? "→" : "←"}</span>
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             {!collapsed && <span>Collapse</span>}
           </button>
           <button onClick={logout} className="sidebar-link w-full text-red-400 hover:text-red-300 hover:bg-red-900/20">
-            <span className="text-lg w-5 text-center shrink-0">⏻</span>
+            <Power size={18} />
             {!collapsed && <span>Logout</span>}
           </button>
         </div>
@@ -96,7 +98,7 @@ export default function ResidentLayout() {
       <main className="flex-1 overflow-y-auto w-full">
         <div className="flex items-center justify-end gap-2 px-4 md:px-8 py-3 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 -mr-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 mr-auto" aria-label="Open menu">
-            <span className="text-xl">☰</span>
+            <Menu size={20} />
           </button>
           <ThemeToggle dark={false} />
           <NotificationBell dark={false} />
@@ -106,12 +108,11 @@ export default function ResidentLayout() {
         </div>
       </main>
 
-      {/* Bottom tab bar — mobile only */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 flex items-stretch">
-        {bottomTabs.map(({ to, icon, label }) => (
+        {bottomTabs.map(({ to, icon: Icon, label }) => (
           <NavLink key={to} to={to}
             className={({ isActive }) => `flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition ${isActive ? "text-brand-500" : "text-slate-400 dark:text-slate-500"}`}>
-            <span className="text-lg">{icon}</span>
+            <Icon size={20} />
             <span>{label}</span>
           </NavLink>
         ))}
