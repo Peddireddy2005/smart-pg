@@ -119,7 +119,7 @@ export default function OwnerLayout() {
           </div>
         </div>
 
-        <nav className="flex-1 px-2.5 py-3 space-y-1 overflow-y-auto overflow-x-visible">
+        <nav className="flex-1 px-2.5 py-3 space-y-1 overflow-y-auto overflow-x-visible sidebar-scroll">
           {links.map((l) => <NavItem key={l.to} {...l} collapsed={collapsed} />)}
         </nav>
 

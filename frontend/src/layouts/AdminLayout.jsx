@@ -44,7 +44,7 @@ export default function AdminLayout() {
           <p className="text-white text-sm font-semibold truncate">{user?.name}</p>
           <p className="text-slate-400 text-xs">Platform Admin</p>
         </div>
-        <nav className="flex-1 px-2.5 py-3 space-y-1">
+        <nav className="flex-1 px-2.5 py-3 space-y-1 overflow-y-auto sidebar-scroll">
           {links.map(({ to, icon: Icon, label }) => (
             <NavLink key={to} to={to} className="block">
               {({ isActive }) => (
