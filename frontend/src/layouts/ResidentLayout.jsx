@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Wallet, CheckCircle2, Flag, Home, IndianRupee, CircleUser } from "lucide-react";
-import api from "../../services/api";
+import api from "../services/api";
 
 export default function ResidentDashboard() {
   const [profile, setProfile] = useState(null);

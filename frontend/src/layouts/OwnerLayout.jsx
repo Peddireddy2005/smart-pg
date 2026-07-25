@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Building2, DoorOpen, Users, LineChart, Wallet, Flag } from "lucide-react";
 import api from "../../services/api";
-import { getSession } from "../../services/authService";
-import ConfirmModal from "../../components/ConfirmModal";
+import { getSession } from "../services/authService";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function OwnerDashboard() {
   const [pgs, setPGs] = useState([]);
