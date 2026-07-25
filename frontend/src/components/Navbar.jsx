@@ -32,15 +32,15 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 sticky top-0 z-50">
+    <nav className="bg-paper-raised dark:bg-ink-950 border-b border-[#DAD4C4] dark:border-ink-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-brand-500 text-white flex items-center justify-center font-bold text-sm">S</div>
-          <span className="font-heading text-xl font-bold text-slate-900 dark:text-white">Smart PG</span>
+          <div className="w-9 h-9 rounded-lg bg-ink-900 text-paper flex items-center justify-center font-heading font-semibold text-sm">S</div>
+          <span className="font-heading text-xl font-semibold text-ink-900 dark:text-paper">Smart PG</span>
         </Link>
 
         <div className="flex items-center gap-4">
-          <Link to="/pgs" className="text-slate-600 dark:text-slate-300 hover:text-brand-500 font-medium text-sm hidden sm:block">
+          <Link to="/pgs" className="text-ink-400 dark:text-ink-100 hover:text-brand-500 font-medium text-sm hidden sm:block">
             Browse PGs
           </Link>
 
@@ -48,15 +48,15 @@ export default function Navbar() {
 
           {!user ? (
             <>
-              <Link to="/login" className="text-slate-600 dark:text-slate-300 hover:text-brand-500 font-medium text-sm">Login</Link>
+              <Link to="/login" className="text-ink-400 dark:text-ink-100 hover:text-brand-500 font-medium text-sm">Login</Link>
               <Link to="/signup" className="btn-primary text-sm py-2 px-4">Get Started</Link>
             </>
           ) : (
             <>
               {user.photoUrl ? (
-                <img src={user.photoUrl} alt="" className="w-8 h-8 rounded-full object-cover border-2 border-gray-200" />
+                <img src={user.photoUrl} alt="" className="w-8 h-8 rounded-full object-cover border border-[#DAD4C4]" />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-sm font-semibold">
                   {user.name?.charAt(0).toUpperCase()}
                 </div>
               )}

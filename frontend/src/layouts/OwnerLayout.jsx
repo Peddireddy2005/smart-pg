@@ -1,163 +1,135 @@
-import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import {
-  LayoutGrid, BarChart3, Search, IndianRupee, Flag, Megaphone, Wrench,
-  DoorOpen, Wallet, FileText, History, Settings, Menu, X, ChevronLeft, ChevronRight, Power,
-} from "lucide-react";
-import NotificationBell from "../components/NotificationBell";
-import GlobalSearch from "../components/GlobalSearch";
-import ThemeToggle from "../components/ThemeToggle";
-import { clearSession, getSession } from "../services/authService";
+import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import { Building2, DoorOpen, Users, LineChart, Wallet, Flag } from "lucide-react";
+import api from "../../services/api";
+import { getSession } from "../../services/authService";
+import ConfirmModal from "../../components/ConfirmModal";
 
-const links = [
-  { to: "/owner/dashboard", icon: LayoutGrid, label: "Dashboard" },
-  { to: "/owner/analytics", icon: BarChart3, label: "Analytics" },
-  { to: "/owner/pg-listings", icon: Search, label: "Browse PGs" },
-  { to: "/owner/payments", icon: IndianRupee, label: "Payments" },
-  { to: "/owner/complaints", icon: Flag, label: "Complaints" },
-  { to: "/owner/announcements", icon: Megaphone, label: "Announcements" },
-  { to: "/owner/staff", icon: Wrench, label: "Staff" },
-  { to: "/owner/vacated", icon: DoorOpen, label: "Vacated Residents" },
-  { to: "/owner/expenses", icon: Wallet, label: "Expenses" },
-  { to: "/owner/reports", icon: FileText, label: "Reports" },
-  { to: "/owner/activity-logs", icon: History, label: "Activity Logs" },
-  { to: "/owner/settings", icon: Settings, label: "Settings" },
-];
-
-function NavItem({ to, icon: Icon, label, collapsed }) {
-  return (
-    <NavLink to={to} className="block">
-      {({ isActive }) => (
-        <div
-          className={`group relative flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-colors
-            ${collapsed ? "justify-center px-0" : "px-3"}
-            ${isActive ? "bg-white/[0.08] text-white" : "text-slate-400 hover:text-white hover:bg-white/5"}`}
-        >
-          {isActive && (
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-brand-500" />
-          )}
-          <Icon size={19} strokeWidth={2} className="shrink-0" />
-          {!collapsed && <span className="truncate">{label}</span>}
-          {collapsed && (
-            <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 z-50">
-              {label}
-            </span>
-          )}
-        </div>
-      )}
-    </NavLink>
-  );
-}
-
-export default function OwnerLayout() {
+export default function OwnerDashboard() {
+  const [pgs, setPGs] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
   const user = getSession();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    Promise.all([api.get("/pg/owner"), api.get("/pg/owner/stats")])
+      .then(([p, s]) => {
+        setPGs(p.data);
+        setStats(s.data);
+      })
+      .catch(() => toast.error("Failed to load dashboard"))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const logout = () => {
-    clearSession();
-    navigate("/login");
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/pg/${deletingId}`);
+      setPGs((prev) => prev.filter((p) => p._id !== deletingId));
+      toast.success("PG deleted");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete PG");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
+  const handleArchive = async (id) => {
+    try {
+      const { data } = await api.put(`/pg/${id}/archive`);
+      setPGs((prev) => prev.map((p) => (p._id === id ? { ...p, isArchived: data.isArchived } : p)));
+      toast.success(data.isArchived ? "PG archived" : "PG unarchived");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed");
+    }
+  };
+
+  const STAT_CARDS = stats ? [
+    { label: "My PGs", value: stats.totalPGs, icon: Building2, mono: false },
+    { label: "Total rooms", value: stats.totalRooms, icon: DoorOpen, mono: false },
+    { label: "Residents", value: stats.totalResidents, icon: Users, mono: false },
+    { label: "Occupancy", value: `${stats.occupancyPct}%`, icon: LineChart, mono: false },
+    { label: "Pending rents", value: stats.pendingPayments, icon: Wallet, mono: false, warn: stats.pendingPayments > 0 },
+    { label: "Open issues", value: stats.openComplaints, icon: Flag, mono: false, danger: stats.openComplaints > 0 },
+  ] : [];
+
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8f7f4] dark:bg-slate-900">
-      {mobileOpen && (
-        <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setMobileOpen(false)} />
+    <div>
+      <div className="flex justify-between items-center mb-8 flex-wrap gap-3">
+        <div>
+          <p className="eyebrow mb-1">Owner · {new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" })}</p>
+          <h1 className="font-heading text-3xl font-semibold text-ink-900 dark:text-white">
+            Good morning, {user?.name?.split(" ")[0]}
+          </h1>
+        </div>
+        <Link to="/owner/add-pg" className="btn-primary">+ Add PG</Link>
+      </div>
+
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+          {STAT_CARDS.map((s) => (
+            <div key={s.label} className="card p-4">
+              <s.icon size={18} className={`mb-3 ${s.danger ? "text-rust-500" : s.warn ? "text-brand-500" : "text-ink-400"}`} strokeWidth={1.75} />
+              <p className={`amount text-2xl font-semibold ${s.danger ? "text-rust-500" : s.warn ? "text-brand-600" : "text-ink-900 dark:text-white"}`}>{s.value}</p>
+              <p className="text-ink-400 text-xs mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
       )}
 
-      <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 w-64 ${collapsed ? "md:w-[76px]" : "md:w-64"}
-          bg-slate-950 flex flex-col shrink-0 transition-transform md:transition-[width] duration-200 ease-out
-          ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
-      >
-        <div className={`h-16 px-4 border-b border-white/10 flex items-center shrink-0 ${collapsed ? "md:justify-center md:px-2" : "justify-between"}`}>
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-sm shrink-0">S</div>
-            {!collapsed && <span className="text-white font-heading font-bold text-lg truncate">Smart PG</span>}
-          </div>
-          <button
-            onClick={() => setCollapsed((c) => !c)}
-            className={`hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition shrink-0 ${collapsed ? "md:hidden" : ""}`}
-            aria-label="Collapse sidebar"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <button onClick={() => setMobileOpen(false)} className="md:hidden w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10" aria-label="Close menu">
-            <X size={18} />
-          </button>
+      <h2 className="font-heading font-semibold text-xl text-ink-900 dark:text-white mb-4">My PGs</h2>
+
+      {loading ? (
+        <div className="grid md:grid-cols-2 gap-4">
+          {[...Array(2)].map((_, i) => <div key={i} className="skeleton h-32" />)}
         </div>
-
-        {collapsed && (
-          <button
-            onClick={() => setCollapsed(false)}
-            className="hidden md:flex items-center justify-center py-2.5 text-slate-500 hover:text-white transition border-b border-white/10"
-            aria-label="Expand sidebar"
-          >
-            <ChevronRight size={16} />
-          </button>
-        )}
-
-        <div className={`px-4 py-4 border-b border-white/10 ${collapsed ? "md:px-2 md:flex md:justify-center" : ""}`}>
-          <div className={`flex items-center gap-3 ${collapsed ? "md:gap-0" : ""}`}>
-            {user?.photoUrl ? (
-              <img src={user.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
-            ) : (
-              <div className="w-9 h-9 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-400 font-bold text-sm shrink-0">
-                {user?.name?.charAt(0).toUpperCase()}
+      ) : pgs.length === 0 ? (
+        <div className="card p-12 text-center text-ink-400">
+          <Building2 size={40} className="mx-auto mb-4 text-ink-400" strokeWidth={1.5} />
+          <p className="font-heading font-semibold text-ink-900 dark:text-white text-lg">No PGs yet</p>
+          <p className="text-sm mt-1 mb-6">Start by adding your first PG listing</p>
+          <Link to="/owner/add-pg" className="btn-primary">+ Add Your First PG</Link>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-4">
+          {pgs.map((pg) => (
+            <Link key={pg._id} to={`/owner/pg/${pg._id}`}
+              className={`card p-5 group block hover:border-brand-400 transition ${pg.isArchived ? "opacity-60" : ""}`}>
+              {pg.images?.[0] && (
+                <img src={pg.images[0].url} alt={pg.name} className="w-full h-36 object-cover rounded-md mb-3 border border-[#E4DFD1]" />
+              )}
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="font-heading font-semibold text-ink-900 dark:text-white group-hover:text-brand-600 transition">
+                  {pg.name} {pg.isArchived && <span className="badge-gray ml-1">Archived</span>}
+                </h3>
+                <span className={pg.vacantBeds > 0 ? "badge-green" : "badge-red"}>{pg.vacantBeds} beds vacant</span>
               </div>
-            )}
-            {!collapsed && (
-              <div className="overflow-hidden">
-                <p className="text-white text-sm font-semibold truncate">{user?.name}</p>
-                <p className="text-slate-400 text-xs truncate">{user?.email}</p>
+              <p className="text-ink-400 text-sm mb-3">{pg.city}</p>
+              <div className="flex gap-4 text-sm text-ink-400 mb-4">
+                <span className="flex items-center gap-1.5"><DoorOpen size={14} /> {pg.totalRooms} rooms</span>
+                <span className="flex items-center gap-1.5"><Users size={14} /> {pg.totalResidents} residents</span>
               </div>
-            )}
-          </div>
+              <div className="flex gap-2 flex-wrap">
+                <Link to={`/owner/pg/${pg._id}/edit`} onClick={(e) => e.stopPropagation()} className="btn-secondary text-sm">Edit</Link>
+                <button onClick={(e) => { e.preventDefault(); handleArchive(pg._id); }} className="btn-secondary text-sm">
+                  {pg.isArchived ? "Unarchive" : "Archive"}
+                </button>
+                <button onClick={(e) => { e.preventDefault(); setDeletingId(pg._id); }} className="btn-danger text-sm">Delete</button>
+              </div>
+            </Link>
+          ))}
         </div>
+      )}
 
-        <nav className="flex-1 px-2.5 py-3 space-y-1 overflow-y-auto overflow-x-visible sidebar-scroll">
-          {links.map((l) => <NavItem key={l.to} {...l} collapsed={collapsed} />)}
-        </nav>
-
-        <div className="px-2.5 py-3 border-t border-white/10">
-          <button
-            onClick={logout}
-            className={`group relative flex items-center gap-3 rounded-xl py-2.5 w-full text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors ${collapsed ? "justify-center px-0" : "px-3"}`}
-          >
-            <Power size={19} className="shrink-0" />
-            {!collapsed && <span>Logout</span>}
-            {collapsed && (
-              <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 z-50">
-                Logout
-              </span>
-            )}
-          </button>
-        </div>
-      </aside>
-
-      <main className="flex-1 overflow-y-auto w-full">
-        <div className="flex items-center justify-between gap-4 px-4 md:px-8 py-3 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 -ml-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0" aria-label="Open menu">
-              <Menu size={20} />
-            </button>
-            <div className="hidden sm:block flex-1 min-w-0">
-              <GlobalSearch />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <ThemeToggle dark={false} />
-            <NotificationBell dark={false} />
-          </div>
-        </div>
-        <div className="p-4 md:p-8 page-fade">
-          <Outlet />
-        </div>
-      </main>
+      <ConfirmModal
+        open={!!deletingId}
+        title="Delete this PG?"
+        description="All rooms, residents and data associated with this PG will be permanently removed."
+        confirmLabel="Delete PG"
+        onCancel={() => setDeletingId(null)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

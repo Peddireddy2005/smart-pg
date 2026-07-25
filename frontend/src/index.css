@@ -1,115 +1,152 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-* { font-family: "DM Sans", sans-serif; }
-h1, h2, h3, h4, h5, h6 { font-family: "Outfit", sans-serif; }
-body { background: #f8f7f4; transition: background-color 0.2s ease; }
-.dark body { background: #0f172a; }
+* { font-family: "Inter", sans-serif; }
+h1, h2, h3, h4, h5, h6 { font-family: "Fraunces", serif; font-weight: 600; letter-spacing: -0.01em; }
+body { background: #F1EEE5; transition: background-color 0.2s ease; }
+.dark body { background: #0F1512; }
+
+/* ---- Buttons ---------------------------------------------------------- */
+/* Slightly squarer corners and a hairline border instead of a floating
+   pill — reads as "form control", not "marketing button". */
 
 .btn-primary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: #ff7a09;
-  color: white;
+  background-color: #1F2822;
+  color: #F1EEE5;
   font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 12px;
-  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid #1F2822;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.1s;
   text-decoration: none;
 }
-.btn-primary:hover:not(:disabled) { background-color: #f05e06; }
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-primary:hover:not(:disabled) { background-color: #354039; }
+.btn-primary:active:not(:disabled) { transform: translateY(1px); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: white;
-  color: #334155;
+  background: #FBFAF5;
+  color: #28322C;
   font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid #DAD4C4;
   cursor: pointer;
   font-size: 14px;
   transition: border-color 0.15s, background 0.15s;
   text-decoration: none;
 }
-.btn-secondary:hover:not(:disabled) { border-color: #cbd5e1; background: #f8fafc; }
-.btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
-.dark .btn-secondary { background: #1e293b; color: #e2e8f0; border-color: #334155; }
-.dark .btn-secondary:hover:not(:disabled) { background: #273548; }
+.btn-secondary:hover:not(:disabled) { border-color: #B8823C; background: #FBF4E7; }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+.dark .btn-secondary { background: #1F2822; color: #DEE3DF; border-color: #3A443E; }
+.dark .btn-secondary:hover:not(:disabled) { background: #28322C; border-color: #B8823C; }
 
 .btn-danger {
   display: inline-flex;
   align-items: center;
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-  padding: 8px 16px;
-  border-radius: 12px;
+  background: #F8ECE8;
+  color: #973B2E;
+  border: 1px solid #E4BFB2;
+  padding: 8px 14px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   transition: background 0.15s;
   text-decoration: none;
 }
-.btn-danger:hover { background: #fee2e2; }
+.btn-danger:hover { background: #F1DAD3; }
+
+/* ---- Surfaces ----------------------------------------------------------- */
 
 .card {
-  background: white;
-  border-radius: 16px;
-  border: 1px solid #f1f5f9;
+  background: #FBFAF5;
+  border-radius: 10px;
+  border: 1px solid #E4DFD1;
+  box-shadow: 0 1px 2px rgba(22, 30, 25, 0.04);
 }
-.dark .card { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+.dark .card { background: #1A211C; border-color: #2E3931; color: #E7E9E4; box-shadow: none; }
 
 .input {
   width: 100%;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border: 1px solid #DAD4C4;
+  border-radius: 8px;
   padding: 10px 14px;
-  background: white;
+  background: #FBFAF5;
   font-size: 14px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .input:focus {
-  border-color: #ff9728;
-  box-shadow: 0 0 0 3px rgba(255, 151, 40, 0.15);
+  border-color: #B8823C;
+  box-shadow: 0 0 0 3px rgba(184, 130, 60, 0.16);
 }
-.dark .input { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+.dark .input { background: #161E19; border-color: #2E3931; color: #E7E9E4; }
 
 .label {
   display: block;
   font-size: 11px;
-  font-weight: 700;
-  color: #6b7280;
+  font-weight: 600;
+  color: #6B756E;
   margin-bottom: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
-.dark .label { color: #94a3b8; }
+.dark .label { color: #8A9490; }
 
-.badge-green  { background:#d1fae5; color:#047857; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; }
-.badge-yellow { background:#fef3c7; color:#b45309; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; }
-.badge-blue   { background:#dbeafe; color:#1d4ed8; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; }
-.badge-red    { background:#fee2e2; color:#dc2626; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; }
-.badge-gray   { background:#f3f4f6; color:#6b7280; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; }
-.badge-purple { background:#ede9fe; color:#6d28d9; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; }
+/* ---- Status badges — stamp-like, square, not pill-shaped --------------- */
+
+.badge-green  { background:#EEF4EF; color:#33634A; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #C6DBC9; }
+.badge-yellow { background:#FBF4E7; color:#7C5324; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #E8CD95; }
+.badge-blue   { background:#EEF1F4; color:#334B63; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #C7D3DE; }
+.badge-red    { background:#F8ECE8; color:#973B2E; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #E4BFB2; }
+.badge-gray   { background:#F2F1EB; color:#5A655D; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #DEDAD0; }
+.badge-purple { background:#F1EEF6; color:#5B4B84; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #D9D0E8; }
+
+/* ---- Money — tabular mono numerals so every rent/price figure in the
+   app reads like a ledger entry rather than default UI text. Apply with
+   className="amount" wherever a rupee figure is the focal number. ------ */
+
+.amount {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Small uppercase kicker used above a heading, e.g. "OWNER · SETTLEMENTS" */
+.eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #B8823C;
+}
+
+/* Perforated-stub edge — signature motif reused on receipt-like cards
+   (invoices, the homepage hero mock). Purely decorative dashed rule. */
+.stub-edge {
+  border-left: 2px dashed #DAD4C4;
+}
+.dark .stub-edge { border-left-color: #3A443E; }
 
 .sidebar-link {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-  border-radius: 12px;
+  border-radius: 8px;
   color: #94a3b8;
   cursor: pointer;
   font-size: 14px;
@@ -129,8 +166,8 @@ body { background: #f8f7f4; transition: background-color 0.2s ease; }
 .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-.skeleton { background: linear-gradient(90deg, #eef1f5 25%, #e4e8ee 37%, #eef1f5 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; border-radius: 12px; }
-.dark .skeleton { background: linear-gradient(90deg, #1e293b 25%, #29394f 37%, #1e293b 63%); background-size: 400% 100%; }
+.skeleton { background: linear-gradient(90deg, #E7E2D3 25%, #DED8C6 37%, #E7E2D3 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; border-radius: 8px; }
+.dark .skeleton { background: linear-gradient(90deg, #1A211C 25%, #232B25 37%, #1A211C 63%); background-size: 400% 100%; }
 @keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 
 /* Dark scrollbar for the dark sidebar nav (Owner/Resident/Admin layouts) */

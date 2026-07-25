@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL + "/api" });
+// Falls back to a relative "/api" (matches the Vite dev proxy target) if
+// VITE_API_URL isn't set, instead of silently building the literal string
+// "undefined/api" and failing every request with no useful error.
+const api = axios.create({ baseURL: `${import.meta.env.VITE_API_URL || ""}/api` });
 
 const getStoredUser = () => {
   try {

@@ -20,7 +20,13 @@ const buildReportData = async (ownerId, month, year) => {
   const residents = await User.find({ role: "resident", assignedPG: { $in: pgIds } }).select("name email phone assignedPG assignedRoom");
 
   const totalCollected = payments.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
-  const totalPending = payments.filter((p) => p.status === "pending").reduce((s, p) => s + p.amount, 0);
+  // Matches getOwnerPaymentSummary in paymentController.js — "pending" must
+  // include pending_approval (UPI/cash claims awaiting owner review) or the
+  // Reports page and the Payments page show two different totals for the
+  // same period.
+  const totalPending = payments
+    .filter((p) => p.status === "pending" || p.status === "pending_approval")
+    .reduce((s, p) => s + p.amount, 0);
   const totalCapacity = rooms.reduce((s, r) => s + r.capacity, 0);
   const totalOccupied = rooms.reduce((s, r) => s + r.occupancy, 0);
   const occupancyPct = totalCapacity ? Math.round((totalOccupied / totalCapacity) * 100) : 0;

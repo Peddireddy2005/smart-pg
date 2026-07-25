@@ -1,6 +1,14 @@
+const fs = require("fs");
 const winston = require("winston");
 
 const isProd = process.env.NODE_ENV === "production";
+
+// logs/ is gitignored and never committed, so on a fresh production
+// deploy it won't exist yet — winston's File transport doesn't reliably
+// create nested directories itself, which throws ENOENT on first boot.
+if (isProd && !fs.existsSync("logs")) {
+  fs.mkdirSync("logs", { recursive: true });
+}
 
 const logger = winston.createLogger({
   level: isProd ? "info" : "debug",
