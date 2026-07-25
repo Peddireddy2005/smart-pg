@@ -163,8 +163,8 @@ body { background: #F1EEE5; transition: background-color 0.2s ease; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 .skeleton { background: linear-gradient(90deg, #E7E2D3 25%, #DED8C6 37%, #E7E2D3 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; border-radius: 8px; }
 .dark .skeleton { background: linear-gradient(90deg, #1A211C 25%, #232B25 37%, #1A211C 63%); background-size: 400% 100%; }

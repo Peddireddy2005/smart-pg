@@ -1,119 +1,92 @@
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Wallet, CheckCircle2, Flag, Home, IndianRupee, CircleUser } from "lucide-react";
-import api from "../services/api";
+import {
+  LayoutGrid, Home, QrCode, Wallet, Flag, Megaphone, CircleUser, Menu, X, Power,
+} from "lucide-react";
+import ThemeToggle from "../components/ThemeToggle";
+import NotificationBell from "../components/NotificationBell";
+import { clearSession, getSession } from "../services/authService";
 
-export default function ResidentDashboard() {
-  const [profile, setProfile] = useState(null);
-  const [payments, setPayments] = useState([]);
-  const [complaints, setComplaints] = useState([]);
-  const [loading, setLoading] = useState(true);
+const links = [
+  { to: "/resident/dashboard", icon: LayoutGrid, label: "Dashboard" },
+  { to: "/resident/room", icon: Home, label: "My Room" },
+  { to: "/resident/join", icon: QrCode, label: "Join a PG" },
+  { to: "/resident/payments", icon: Wallet, label: "Payments" },
+  { to: "/resident/complaints", icon: Flag, label: "Complaints" },
+  { to: "/resident/announcements", icon: Megaphone, label: "Announcements" },
+  { to: "/resident/profile", icon: CircleUser, label: "My Profile" },
+];
 
-  useEffect(() => {
-    Promise.all([
-      api.get("/auth/me"),
-      api.get("/payments/my"),
-      api.get("/complaints/my"),
-    ])
-      .then(([p, pay, comp]) => {
-        setProfile(p.data);
-        setPayments(pay.data);
-        setComplaints(comp.data);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+export default function ResidentLayout() {
+  const user = getSession();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full" /></div>;
-  }
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
-  const now = new Date();
-  const currentPending = payments.find(
-    (p) => (p.status === "pending" || p.status === "pending_approval") && p.month === now.getMonth() + 1 && p.year === now.getFullYear()
-  );
-  const activeComplaints = complaints.filter((c) => c.status !== "resolved" && c.status !== "closed").length;
-  const paidThisYear = payments.filter((p) => p.status === "paid" && p.year === now.getFullYear()).reduce((s, p) => s + p.amount, 0);
+  const logout = () => {
+    clearSession();
+    navigate("/login");
+  };
 
   return (
-    <div>
-      <div className="mb-8">
-        <p className="eyebrow mb-1">{now.toLocaleString("default", { month: "long", year: "numeric" })}</p>
-        <h1 className="font-heading text-3xl font-semibold text-ink-900 dark:text-white">Hello, {profile?.name?.split(" ")[0]}</h1>
-      </div>
-
-      {profile?.assignedPG ? (
-        <div className="card p-5 mb-5 bg-ink-900 border-0 text-white">
-          <p className="text-ink-100/60 text-xs font-semibold uppercase tracking-wider mb-3">Your stay</p>
-          <div className="flex justify-between items-start flex-wrap gap-3">
-            <div>
-              <p className="font-heading text-xl font-semibold">{profile.assignedPG.name}</p>
-              <p className="text-ink-100/60 text-sm mt-0.5">{profile.assignedPG.city}</p>
-              {profile.assignedRoom && <p className="text-ink-100/80 text-sm mt-1">Room {profile.assignedRoom.roomNumber}</p>}
-            </div>
-            {profile.assignedRoom?.rent && (
-              <div className="text-right">
-                <p className="amount text-brand-400 text-2xl font-semibold">₹{profile.assignedRoom.rent.toLocaleString()}</p>
-                <p className="text-ink-100/60 text-xs">per month</p>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="card p-5 mb-5 bg-brand-50 dark:bg-brand-900/10 border-brand-200 dark:border-brand-900/40">
-          <p className="text-brand-700 dark:text-brand-300 font-semibold">Not assigned to any PG yet</p>
-          <p className="text-brand-600 dark:text-brand-400 text-sm mt-1">Contact your PG owner, or scan a room's QR invite to join instantly.</p>
-        </div>
+    <div className="flex h-screen overflow-hidden bg-[#f8f7f4] dark:bg-slate-900">
+      {mobileOpen && (
+        <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="card p-4">
-          <Wallet size={18} className={`mb-2 ${currentPending ? "text-brand-500" : "text-sage-500"}`} strokeWidth={1.75} />
-          <p className={`amount text-xl font-semibold ${currentPending ? "text-brand-600" : "text-sage-600"}`}>
-            {currentPending ? `₹${currentPending.amount.toLocaleString()}` : "Clear"}
-          </p>
-          <p className="text-ink-400 text-xs mt-1">This month</p>
+      <aside className={`fixed md:static inset-y-0 left-0 z-40 w-60 bg-slate-950 flex flex-col shrink-0
+        transition-transform duration-200 ease-out ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+        <div className="h-16 px-4 border-b border-white/10 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-sm shrink-0">S</div>
+            <span className="text-white font-heading font-bold text-lg">Smart PG</span>
+          </div>
+          <button onClick={() => setMobileOpen(false)} className="md:hidden w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10" aria-label="Close menu">
+            <X size={18} />
+          </button>
         </div>
-        <div className="card p-4">
-          <CheckCircle2 size={18} className="mb-2 text-sage-500" strokeWidth={1.75} />
-          <p className="amount text-xl font-semibold text-sage-600">₹{paidThisYear.toLocaleString()}</p>
-          <p className="text-ink-400 text-xs mt-1">Paid this year</p>
+        <div className="px-4 py-4 border-b border-white/10">
+          <p className="text-white text-sm font-semibold truncate">{user?.name}</p>
+          <p className="text-slate-400 text-xs">Resident</p>
         </div>
-        <div className="card p-4">
-          <Flag size={18} className={`mb-2 ${activeComplaints > 0 ? "text-rust-500" : "text-ink-400"}`} strokeWidth={1.75} />
-          <p className={`amount text-xl font-semibold ${activeComplaints > 0 ? "text-rust-500" : "text-ink-900 dark:text-white"}`}>{activeComplaints}</p>
-          <p className="text-ink-400 text-xs mt-1">Open issues</p>
+        <nav className="flex-1 px-2.5 py-3 space-y-1 overflow-y-auto sidebar-scroll">
+          {links.map(({ to, icon: Icon, label }) => (
+            <NavLink key={to} to={to} className="block">
+              {({ isActive }) => (
+                <div className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors
+                  ${isActive ? "bg-white/[0.08] text-white" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
+                  {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-brand-500" />}
+                  <Icon size={19} className="shrink-0" />
+                  <span>{label}</span>
+                </div>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="px-2.5 py-3 border-t border-white/10">
+          <button onClick={logout} className="flex items-center gap-3 rounded-xl px-3 py-2.5 w-full text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+            <Power size={19} className="shrink-0" />
+            <span>Logout</span>
+          </button>
         </div>
-      </div>
+      </aside>
 
-      {currentPending && (
-        <div className="card p-5 mb-5 border-brand-200 dark:border-brand-900/40 bg-brand-50 dark:bg-brand-900/10">
-          <div className="flex justify-between items-center flex-wrap gap-3">
-            <div>
-              <p className="font-heading font-semibold text-brand-800 dark:text-brand-300">Rent due</p>
-              <p className="text-brand-700 dark:text-brand-400 text-sm">{now.toLocaleString("default", { month: "long" })} {now.getFullYear()}</p>
-              <p className="amount text-2xl font-semibold text-brand-900 dark:text-brand-200 mt-1">₹{currentPending.amount.toLocaleString()}</p>
-            </div>
-            <Link to="/resident/payments" className="btn-primary shrink-0">Pay now →</Link>
+      <main className="flex-1 overflow-y-auto w-full">
+        <div className="flex items-center justify-between px-4 md:px-8 py-3 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 -ml-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300" aria-label="Open menu">
+            <Menu size={20} />
+          </button>
+          <div className="flex items-center gap-2 ml-auto">
+            <NotificationBell dark={false} />
+            <ThemeToggle dark={false} />
           </div>
         </div>
-      )}
-
-      <h2 className="font-heading font-semibold text-ink-700 dark:text-slate-300 mb-3">Quick actions</h2>
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { to: "/resident/payments", icon: IndianRupee, label: "Pay rent", sub: currentPending ? `₹${currentPending.amount.toLocaleString()} due` : "All clear" },
-          { to: "/resident/complaints", icon: Flag, label: "Complaints", sub: `${activeComplaints} active` },
-          { to: "/resident/room", icon: Home, label: "My room", sub: "Room & roommates" },
-          { to: "/resident/profile", icon: CircleUser, label: "My profile", sub: "Update details & ID" },
-        ].map((a) => (
-          <Link key={a.to} to={a.to} className="card p-4 hover:border-brand-400 transition group">
-            <a.icon size={20} className="mb-3 text-brand-500" strokeWidth={1.75} />
-            <p className="font-heading font-semibold text-ink-900 dark:text-white group-hover:text-brand-600 transition text-sm">{a.label}</p>
-            <p className="text-ink-400 text-xs">{a.sub}</p>
-          </Link>
-        ))}
-      </div>
+        <div className="p-4 md:p-8 page-fade">
+          <Outlet />
+        </div>
+      </main>
     </div>
   );
 }
