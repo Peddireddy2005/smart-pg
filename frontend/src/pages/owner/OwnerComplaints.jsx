@@ -11,15 +11,32 @@ export default function OwnerComplaints() {
   const [complaints, setComplaints] = useState([]);
   const [staff, setStaff] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
 
-  useEffect(() => {
-    Promise.all([api.get("/complaints/owner/all"), getOwnerStaff()])
-      .then(([c, s]) => { setComplaints(c.data); setStaff(s); })
-      .catch(() => toast.error("Failed to load complaints"))
-      .finally(() => setLoading(false));
-  }, []);
+  const load = async (p, f) => {
+    setLoading(true);
+    try {
+      const [c, s] = await Promise.all([
+        api.get("/complaints/owner/all", { params: { page: p, status: f } }),
+        getOwnerStaff({ limit: 100 }),
+      ]);
+      setComplaints(c.data.complaints);
+      setPage(c.data.page);
+      setTotalPages(c.data.totalPages);
+      setTotal(c.data.total);
+      setStaff(s.staff);
+    } catch {
+      toast.error("Failed to load complaints");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(1, filter); }, [filter]); // eslint-disable-line
 
   const update = async (id, status) => {
     try {
@@ -40,8 +57,6 @@ export default function OwnerComplaints() {
     }
   };
 
-  const filtered = filter === "all" ? complaints : complaints.filter((c) => c.status === filter);
-
   return (
     <div>
       <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-6">Complaints</h1>
@@ -51,21 +66,19 @@ export default function OwnerComplaints() {
           <button key={s} onClick={() => setFilter(s)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition capitalize ${filter === s ? "bg-slate-900 text-white" : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300"}`}>
             {s === "all" ? "All" : s}
-            <span className="ml-1.5 opacity-60 text-xs">
-              ({s === "all" ? complaints.length : complaints.filter((c) => c.status === s).length})
-            </span>
+            {filter === s && <span className="ml-1.5 opacity-60 text-xs">({total})</span>}
           </button>
         ))}
       </div>
 
-      {loading ? <p className="text-slate-400">Loading...</p> : filtered.length === 0 ? (
+      {loading ? <p className="text-slate-400">Loading...</p> : complaints.length === 0 ? (
         <div className="card p-12 text-center text-slate-400">
           <p className="text-4xl mb-3">✅</p>
           <p className="font-heading font-semibold text-slate-600 dark:text-slate-300">No complaints here</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((c) => (
+          {complaints.map((c) => (
             <div key={c._id} className="card p-5">
               <div className="flex justify-between items-start gap-4">
                 <div className="flex gap-3 flex-1 min-w-0">
@@ -111,6 +124,17 @@ export default function OwnerComplaints() {
                 </div>
               </div>
             </div>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-6">
+          {[...Array(totalPages)].map((_, i) => (
+            <button key={i} onClick={() => load(i + 1, filter)}
+              className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition ${page === i + 1 ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"}`}>
+              {i + 1}
+            </button>
           ))}
         </div>
       )}

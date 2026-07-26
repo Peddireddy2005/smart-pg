@@ -13,10 +13,20 @@ const recalcPGRatings = async (pgId) => {
 };
 
 const getPGReviews = asyncHandler(async (req, res) => {
-  const reviews = await Review.find({ pg: req.params.pgId })
-    .populate("resident", "name photoUrl")
-    .sort({ createdAt: -1 });
-  res.json(reviews);
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Number(req.query.limit) || 20);
+
+  const filter = { pg: req.params.pgId };
+  const [reviews, total] = await Promise.all([
+    Review.find(filter)
+      .populate("resident", "name photoUrl")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Review.countDocuments(filter),
+  ]);
+
+  res.json({ reviews, page, totalPages: Math.max(1, Math.ceil(total / limit)), total });
 });
 
 const upsertReview = asyncHandler(async (req, res) => {
@@ -46,7 +56,6 @@ const deleteReview = asyncHandler(async (req, res) => {
   res.json({ message: "Review deleted" });
 });
 
-// Owner: reply publicly to a resident's review (spec §23 — "Owner Reply").
 const replyToReview = asyncHandler(async (req, res) => {
   const { reply } = req.body;
   const review = await Review.findById(req.params.id).populate("pg");

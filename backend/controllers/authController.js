@@ -2,12 +2,13 @@ const crypto = require("crypto");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generateToken");
+const { issueRefreshToken, rotateRefreshToken, revokeRefreshToken, revokeAllForUser } = require("../utils/refreshToken");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { verifyGoogleToken, isConfigured: googleConfigured } = require("../config/googleOAuth");
 const logger = require("../config/logger");
 
-const formatUser = (user) => ({
+const formatUser = (user, token, refreshToken) => ({
   _id: user._id,
   name: user.name,
   email: user.email,
@@ -30,8 +31,16 @@ const formatUser = (user) => ({
   assignedPG: user.assignedPG,
   assignedRoom: user.assignedRoom,
   isVerified: user.isVerified,
-  token: generateToken(user._id),
+  token,
+  refreshToken,
 });
+
+// Issues a short-lived access token + long-lived refresh token for a
+// freshly authenticated user. Shared by every login-equivalent flow below.
+const issueSession = async (user) => {
+  const refreshToken = await issueRefreshToken(user._id);
+  return formatUser(user, generateToken(user._id), refreshToken);
+};
 
 // No SMTP available in this build, so accounts are verified immediately on
 // signup instead of via an emailed OTP code.
@@ -52,7 +61,7 @@ const signup = asyncHandler(async (req, res) => {
       const populated = await User.findById(exists._id)
         .populate("assignedPG", "name address city")
         .populate("assignedRoom", "roomNumber rent");
-      return res.status(201).json(formatUser(populated));
+      return res.status(201).json(await issueSession(populated));
     }
     throw new AppError("User already exists", 400);
   }
@@ -67,7 +76,7 @@ const signup = asyncHandler(async (req, res) => {
   });
   logger.info(`[SIGNUP] User created: ${user._id} ${email}`);
 
-  res.status(201).json(formatUser(user));
+  res.status(201).json(await issueSession(user));
 });
 
 const login = asyncHandler(async (req, res) => {
@@ -86,7 +95,7 @@ const login = asyncHandler(async (req, res) => {
   if (!match) throw new AppError("Invalid credentials", 400);
 
   logger.info(`[LOGIN] Success: ${email} ${user.role}`);
-  res.json(formatUser(user));
+  res.json(await issueSession(user));
 });
 
 const getMe = asyncHandler(async (req, res) => {
@@ -110,7 +119,9 @@ const updateProfile = asyncHandler(async (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
 
-  const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true, runValidators: true })
+  // runSetters ensures the idProofNumber encryption setter actually runs on
+  // this update path — findByIdAndUpdate skips custom setters by default.
+  const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true, runValidators: true, runSetters: true })
     .select("-password")
     .populate("assignedPG", "name address city")
     .populate("assignedRoom", "roomNumber rent");
@@ -128,6 +139,9 @@ const changePassword = asyncHandler(async (req, res) => {
 
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
+  // A changed password should invalidate any refresh tokens issued before
+  // the change — force re-login on every other device/session.
+  await revokeAllForUser(user._id);
   logger.info(`[CHANGE PASSWORD] Updated for ${user.email}`);
   res.json({ message: "Password updated successfully" });
 });
@@ -165,6 +179,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   await user.save();
+  await revokeAllForUser(user._id);
 
   logger.info(`[RESET PASSWORD] Password reset for ${user.email}`);
   res.json({ message: "Password reset successful. You can now log in." });
@@ -217,7 +232,25 @@ const googleAuth = asyncHandler(async (req, res) => {
     logger.info(`[GOOGLE AUTH] New account created: ${email} (${requestedRole})`);
   }
 
-  res.json(formatUser(user));
+  res.json(await issueSession(user));
+});
+
+// Exchanges a valid, unexpired refresh token for a new access token,
+// rotating the refresh token in the process.
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  const result = await rotateRefreshToken(refreshToken);
+  if (!result) throw new AppError("Invalid or expired refresh token, please log in again", 401);
+
+  res.json({ token: generateToken(result.userId), refreshToken: result.token });
+});
+
+// Best-effort — always returns success even if the token was already
+// invalid, since the end state (no valid session) is the same either way.
+const logout = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  if (refreshToken) await revokeRefreshToken(refreshToken);
+  res.json({ message: "Logged out" });
 });
 
 module.exports = {
@@ -229,4 +262,6 @@ module.exports = {
   changePassword,
   forgotPassword,
   resetPassword,
+  refreshAccessToken,
+  logout,
 };

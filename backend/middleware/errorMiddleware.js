@@ -1,4 +1,5 @@
 const logger = require("../config/logger");
+const { Sentry, isConfigured } = require("../config/sentry");
 
 const notFound = (req, res) => {
   res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
@@ -38,6 +39,11 @@ const errorHandler = (err, req, res, next) => {
 
   if (statusCode >= 500) {
     logger.error(`[ERROR] ${req.method} ${req.originalUrl} -> ${err.stack || err.message}`);
+    if (isConfigured()) {
+      Sentry.captureException(err, {
+        extra: { path: req.originalUrl, method: req.method, userId: req.user?._id?.toString() },
+      });
+    }
   } else {
     logger.warn(`[ERROR] ${req.method} ${req.originalUrl} -> ${message}`);
   }

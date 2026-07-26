@@ -25,9 +25,19 @@ const getPGStaff = asyncHandler(async (req, res) => {
 });
 
 const getOwnerStaff = asyncHandler(async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(100, Number(req.query.limit) || 40);
+
   const pgs = await PG.find({ owner: req.user._id });
-  const staff = await Staff.find({ pg: { $in: pgs.map((p) => p._id) } }).populate("pg", "name").sort({ createdAt: -1 });
-  res.json(staff);
+  const pgIds = pgs.map((p) => p._id);
+  const filter = { pg: { $in: pgIds } };
+
+  const [staff, total] = await Promise.all([
+    Staff.find(filter).populate("pg", "name").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit),
+    Staff.countDocuments(filter),
+  ]);
+
+  res.json({ staff, page, totalPages: Math.max(1, Math.ceil(total / limit)), total });
 });
 
 const updateStaff = asyncHandler(async (req, res) => {
@@ -56,7 +66,6 @@ const deleteStaff = asyncHandler(async (req, res) => {
   res.json({ message: "Staff member removed" });
 });
 
-// Mark attendance for today (or a given date) — spec §20.
 const markAttendance = asyncHandler(async (req, res) => {
   const { present = true, date } = req.body;
   const staff = await Staff.findById(req.params.id);

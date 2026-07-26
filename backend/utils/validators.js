@@ -31,6 +31,10 @@ const changePasswordValidator = [
   body("newPassword").isLength({ min: 6 }).withMessage("New password must be at least 6 characters"),
 ];
 
+const refreshTokenValidator = [
+  body("refreshToken").notEmpty().withMessage("Refresh token is required"),
+];
+
 const pgValidator = [
   body("name").trim().notEmpty().withMessage("PG name is required").isLength({ max: 120 }),
   body("city").trim().notEmpty().withMessage("City is required"),
@@ -71,11 +75,6 @@ const paginationValidator = [
   query("limit").optional().isInt({ min: 1, max: 100 }),
 ];
 
-const verifyEmailValidator = [
-  body("email").trim().isEmail().withMessage("A valid email is required").normalizeEmail(),
-  body("code").trim().isLength({ min: 4, max: 6 }).withMessage("Invalid verification code"),
-];
-
 const announcementValidator = [
   body("title").trim().notEmpty().withMessage("Title is required").isLength({ max: 150 }),
   body("message").trim().notEmpty().withMessage("Message is required").isLength({ max: 2000 }),
@@ -111,6 +110,7 @@ module.exports = {
   forgotPasswordValidator,
   resetPasswordValidator,
   changePasswordValidator,
+  refreshTokenValidator,
   pgValidator,
   roomValidator,
   allocateValidator,
@@ -118,7 +118,6 @@ module.exports = {
   reviewValidator,
   generateRentValidator,
   paginationValidator,
-  verifyEmailValidator,
   announcementValidator,
   staffValidator,
   visitorValidator,

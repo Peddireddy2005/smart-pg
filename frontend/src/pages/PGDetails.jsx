@@ -19,6 +19,9 @@ export default function PGDetails() {
   const [pg, setPG] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewTotalPages, setReviewTotalPages] = useState(1);
+  const [loadingMoreReviews, setLoadingMoreReviews] = useState(false);
   const [loading, setLoading] = useState(true);
   const [imgIdx, setImgIdx] = useState(0);
   const [myRating, setMyRating] = useState(0);
@@ -34,13 +37,29 @@ export default function PGDetails() {
     ]).then(([p, r, rev]) => {
       setPG(p.data);
       setRooms(r.data);
-      setReviews(rev);
+      setReviews(rev.reviews);
+      setReviewPage(rev.page);
+      setReviewTotalPages(rev.totalPages);
       if (user) {
-        const mine = rev.find((r2) => r2.resident?._id === user._id);
+        const mine = rev.reviews.find((r2) => r2.resident?._id === user._id);
         if (mine) { setMyRating(mine.rating); setMyComment(mine.comment || ""); }
       }
     }).finally(() => setLoading(false));
   }, [id]); // eslint-disable-line
+
+  const loadMoreReviews = async () => {
+    setLoadingMoreReviews(true);
+    try {
+      const next = await getPGReviews(id, reviewPage + 1);
+      setReviews((prev) => [...prev, ...next.reviews]);
+      setReviewPage(next.page);
+      setReviewTotalPages(next.totalPages);
+    } catch {
+      toast.error("Failed to load more reviews");
+    } finally {
+      setLoadingMoreReviews(false);
+    }
+  };
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -189,7 +208,7 @@ export default function PGDetails() {
           </div>
         )}
 
-        <h2 className="font-heading font-bold text-xl text-slate-900 dark:text-white mb-4">Reviews ({reviews.length})</h2>
+        <h2 className="font-heading font-bold text-xl text-slate-900 dark:text-white mb-4">Reviews</h2>
 
         {user && user.role === "resident" && (
           <form onSubmit={handleSubmitReview} className="card p-5 mb-5">
@@ -210,7 +229,7 @@ export default function PGDetails() {
         {reviews.length === 0 ? (
           <p className="text-slate-400 mb-8">No reviews yet. Be the first!</p>
         ) : (
-          <div className="space-y-4 mb-8">
+          <div className="space-y-4 mb-4">
             {reviews.map((rev) => (
               <div key={rev._id} className="card p-4">
                 <div className="flex items-start gap-3">
@@ -239,6 +258,14 @@ export default function PGDetails() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {reviewPage < reviewTotalPages && (
+          <div className="text-center mb-8">
+            <button onClick={loadMoreReviews} disabled={loadingMoreReviews} className="btn-secondary text-sm">
+              {loadingMoreReviews ? "Loading..." : "Load more reviews"}
+            </button>
           </div>
         )}
       </div>

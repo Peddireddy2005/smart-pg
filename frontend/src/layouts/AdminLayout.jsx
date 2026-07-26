@@ -2,7 +2,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { LayoutGrid, KeyRound, Building2, Menu, X, Power } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
-import { clearSession, getSession } from "../services/authService";
+import { logout, getSession } from "../services/authService";
 
 const links = [
   { to: "/admin/dashboard", icon: LayoutGrid, label: "Platform Overview" },
@@ -18,8 +18,8 @@ export default function AdminLayout() {
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
-  const logout = () => {
-    clearSession();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -59,7 +59,7 @@ export default function AdminLayout() {
           ))}
         </nav>
         <div className="px-2.5 py-3 border-t border-white/10">
-          <button onClick={logout} className="flex items-center gap-3 rounded-xl px-3 py-2.5 w-full text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+          <button onClick={handleLogout} className="flex items-center gap-3 rounded-xl px-3 py-2.5 w-full text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
             <Power size={19} className="shrink-0" />
             <span>Logout</span>
           </button>

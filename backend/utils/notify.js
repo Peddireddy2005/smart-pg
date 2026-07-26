@@ -1,16 +1,8 @@
-const Notification = require("../models/Notification");
-const logger = require("../config/logger");
+const jwt = require("jsonwebtoken");
 
-const notify = async ({ user, title, message, type = "system", link = "" }) => {
-  try {
-    await Notification.create({ user, title, message, type, link });
-  } catch (err) {
-    logger.warn(`[NOTIFY] Failed to create notification for ${user}: ${err.message}`);
-  }
-};
+const generateToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRE || "1h",
+  });
 
-const notifyMany = async (userIds, payload) => {
-  await Promise.all(userIds.map((user) => notify({ ...payload, user })));
-};
-
-module.exports = { notify, notifyMany };
+module.exports = generateToken;

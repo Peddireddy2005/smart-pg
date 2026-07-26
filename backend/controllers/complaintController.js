@@ -49,15 +49,27 @@ const getMyComplaints = asyncHandler(async (req, res) => {
 });
 
 const getOwnerComplaints = asyncHandler(async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(100, Number(req.query.limit) || 40);
+
   const pgs = await PG.find({ owner: req.user._id });
   const pgIds = pgs.map((p) => p._id);
-  const complaints = await Complaint.find({ pg: { $in: pgIds } })
-    .populate("resident", "name email photoUrl")
-    .populate("room", "roomNumber")
-    .populate("pg", "name")
-    .populate("assignedStaff", "name role phone")
-    .sort({ createdAt: -1 });
-  res.json(complaints);
+  const filter = { pg: { $in: pgIds } };
+  if (req.query.status && req.query.status !== "all") filter.status = req.query.status;
+
+  const [complaints, total] = await Promise.all([
+    Complaint.find(filter)
+      .populate("resident", "name email photoUrl")
+      .populate("room", "roomNumber")
+      .populate("pg", "name")
+      .populate("assignedStaff", "name role phone")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Complaint.countDocuments(filter),
+  ]);
+
+  res.json({ complaints, page, totalPages: Math.max(1, Math.ceil(total / limit)), total });
 });
 
 const getPGComplaints = asyncHandler(async (req, res) => {

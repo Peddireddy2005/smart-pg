@@ -9,27 +9,39 @@ const ROLES = ["Cleaner", "Cook", "Security", "Electrician", "Plumber", "Other"]
 export default function Staff() {
   const [pgs, setPgs] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ pgId: "", name: "", role: "Cleaner", phone: "", salary: "" });
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState(null);
 
-  useEffect(() => {
-    Promise.all([api.get("/pg/owner"), getOwnerStaff()])
-      .then(([p, s]) => { setPgs(p.data); setStaff(s); if (p.data[0]) setForm((f) => ({ ...f, pgId: p.data[0]._id })); })
-      .catch(() => toast.error("Failed to load"))
-      .finally(() => setLoading(false));
-  }, []);
+  const load = async (p = page) => {
+    setLoading(true);
+    try {
+      const [pgRes, s] = await Promise.all([api.get("/pg/owner"), getOwnerStaff({ page: p })]);
+      setPgs(pgRes.data);
+      setStaff(s.staff);
+      setPage(s.page);
+      setTotalPages(s.totalPages);
+      setForm((f) => (f.pgId ? f : { ...f, pgId: pgRes.data[0]?._id || "" }));
+    } catch {
+      toast.error("Failed to load");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(1); }, []); // eslint-disable-line
 
   const submit = async (e) => {
     e.preventDefault();
     setAdding(true);
     try {
-      const created = await createStaff(form.pgId, { name: form.name, role: form.role, phone: form.phone, salary: Number(form.salary) || 0 });
-      const pg = pgs.find((p) => p._id === form.pgId);
-      setStaff((prev) => [{ ...created, pg }, ...prev]);
+      await createStaff(form.pgId, { name: form.name, role: form.role, phone: form.phone, salary: Number(form.salary) || 0 });
       setForm({ ...form, name: "", phone: "", salary: "" });
       toast.success("Staff added");
+      load(1);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed");
     } finally {
@@ -60,8 +72,8 @@ export default function Staff() {
   const confirmDelete = async () => {
     try {
       await deleteStaff(deleting);
-      setStaff((prev) => prev.filter((s) => s._id !== deleting));
       toast.success("Staff removed");
+      load(page);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed");
     } finally {
@@ -134,6 +146,17 @@ export default function Staff() {
                 <button onClick={() => setDeleting(s._id)} className="btn-danger text-xs">Remove</button>
               </div>
             </div>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-6">
+          {[...Array(totalPages)].map((_, i) => (
+            <button key={i} onClick={() => load(i + 1)}
+              className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition ${page === i + 1 ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"}`}>
+              {i + 1}
+            </button>
           ))}
         </div>
       )}

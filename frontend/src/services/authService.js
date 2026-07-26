@@ -39,3 +39,17 @@ export const getSession = () => {
     return null;
   }
 };
+
+// Revokes the refresh token on the server (best-effort — logout still
+// proceeds locally even if the network call fails) then clears the session.
+export const logout = async () => {
+  const session = getSession();
+  if (session?.refreshToken) {
+    try {
+      await api.post("/auth/logout", { refreshToken: session.refreshToken });
+    } catch {
+      // ignore — local session is cleared regardless
+    }
+  }
+  clearSession();
+};
