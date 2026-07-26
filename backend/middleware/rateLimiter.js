@@ -17,12 +17,4 @@ const authLimiter = rateLimit({
   message: { message: "Too many attempts, please try again in 15 minutes." },
 });
 
-const otpLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000,
-  max: 8,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: "Too many OTP requests, please try again in 10 minutes." },
-});
-
-module.exports = { apiLimiter, authLimiter, otpLimiter };
+module.exports = { apiLimiter, authLimiter};

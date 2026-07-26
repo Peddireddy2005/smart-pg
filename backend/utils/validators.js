@@ -76,10 +76,6 @@ const verifyEmailValidator = [
   body("code").trim().isLength({ min: 4, max: 6 }).withMessage("Invalid verification code"),
 ];
 
-const resendOtpValidator = [
-  body("email").trim().isEmail().withMessage("A valid email is required").normalizeEmail(),
-];
-
 const announcementValidator = [
   body("title").trim().notEmpty().withMessage("Title is required").isLength({ max: 150 }),
   body("message").trim().notEmpty().withMessage("Message is required").isLength({ max: 2000 }),
@@ -123,7 +119,6 @@ module.exports = {
   generateRentValidator,
   paginationValidator,
   verifyEmailValidator,
-  resendOtpValidator,
   announcementValidator,
   staffValidator,
   visitorValidator,

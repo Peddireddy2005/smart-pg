@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Room = require("../models/Room");
 const PG = require("../models/PG");
 const User = require("../models/User");
@@ -61,59 +62,90 @@ const getRoomsByPG = asyncHandler(async (req, res) => {
   res.json(rooms);
 });
 
+// Owner: allocate a resident (existing or guest) to a room. Wrapped in a
+// transaction — creating/finding the resident, updating the room, updating
+// the user's assignment, and charging rent/deposit either all commit
+// together or none do. Notifications/activity log fire only after a
+// successful commit.
 const allocateResident = asyncHandler(async (req, res) => {
   const { residentEmail, residentName } = req.body;
-  let resident = await User.findOne({ email: residentEmail.toLowerCase() });
 
-  if (!resident) {
-    if (!residentName) {
-      throw new AppError("Resident not found. Please provide their name to add them as a guest.", 400);
-    }
-    resident = await User.create({
-      name: residentName,
-      email: residentEmail.toLowerCase(),
-      password: "",
-      role: "resident",
-      isVerified: false,
-      invitedByOwner: true,
+  const session = await mongoose.startSession();
+  let resultRoom;
+  let resultResident;
+  let resultPG;
+
+  try {
+    await session.withTransaction(async () => {
+      let resident = await User.findOne({ email: residentEmail.toLowerCase() }).session(session);
+
+      if (!resident) {
+        if (!residentName) {
+          throw new AppError("Resident not found. Please provide their name to add them as a guest.", 400);
+        }
+        const [created] = await User.create(
+          [
+            {
+              name: residentName,
+              email: residentEmail.toLowerCase(),
+              password: "",
+              role: "resident",
+              isVerified: false,
+              invitedByOwner: true,
+            },
+          ],
+          { session }
+        );
+        resident = created;
+        logger.info(`[ALLOCATE] Guest account created: ${resident._id}`);
+      } else if (resident.role !== "resident") {
+        throw new AppError("This email belongs to an owner account", 400);
+      }
+
+      if (resident.assignedRoom) throw new AppError("Resident is already assigned to a room", 400);
+
+      const room = await Room.findById(req.params.roomId).populate("pg").session(session);
+      if (!room) throw new AppError("Room not found", 404);
+      if (room.occupancy >= room.capacity) throw new AppError("Room is full", 400);
+
+      room.residents.push(resident._id);
+      room.occupancy += 1;
+      if (room.occupancy >= room.capacity) room.status = "occupied";
+      await room.save({ session });
+
+      await User.findByIdAndUpdate(
+        resident._id,
+        {
+          assignedPG: room.pg._id,
+          assignedRoom: room._id,
+          moveInDate: new Date(),
+          vacateNotice: { requested: false, noticeGivenAt: null, plannedDate: null },
+        },
+        { session }
+      );
+
+      await chargeResidentOnJoin({ resident, room, pg: room.pg, ownerId: req.user._id, session });
+
+      resultRoom = room;
+      resultResident = resident;
+      resultPG = room.pg;
     });
-    logger.info(`[ALLOCATE] Guest account created: ${resident._id}`);
-  } else if (resident.role !== "resident") {
-    throw new AppError("This email belongs to an owner account", 400);
+  } finally {
+    session.endSession();
   }
 
-  if (resident.assignedRoom) throw new AppError("Resident is already assigned to a room", 400);
-
-  const room = await Room.findById(req.params.roomId).populate("pg");
-  if (!room) throw new AppError("Room not found", 404);
-  if (room.occupancy >= room.capacity) throw new AppError("Room is full", 400);
-
-  room.residents.push(resident._id);
-  room.occupancy += 1;
-  if (room.occupancy >= room.capacity) room.status = "occupied";
-  await room.save();
-
-  await User.findByIdAndUpdate(resident._id, {
-    assignedPG: room.pg._id,
-    assignedRoom: room._id,
-    moveInDate: new Date(),
-    vacateNotice: { requested: false, noticeGivenAt: null, plannedDate: null },
-  });
-
   await notify({
-    user: resident._id,
+    user: resultResident._id,
     title: "Room Assigned",
-    message: `You've been assigned to Room ${room.roomNumber} at ${room.pg.name}.`,
+    message: `You've been assigned to Room ${resultRoom.roomNumber} at ${resultPG.name}.`,
     type: "allocation",
     link: "/resident/room",
   });
 
-  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Resident Added", entityType: "Room", entityId: room._id, details: `${resident.email} -> Room ${room.roomNumber}` });
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Resident Added", entityType: "Room", entityId: resultRoom._id, details: `${resultResident.email} -> Room ${resultRoom.roomNumber}` });
 
-  await chargeResidentOnJoin({ resident, room, pg: room.pg, ownerId: req.user._id });
-
-  logger.info(`[ALLOCATE] Done. Room: ${room.roomNumber} Resident: ${resident.email}`);
-  const populated = await Room.findById(room._id)
+  logger.info(`[ALLOCATE] Done. Room: ${resultRoom.roomNumber} Resident: ${resultResident.email}`);
+  const populated = await Room.findById(resultRoom._id)
     .populate("residents", "name email phone photoUrl isVerified invitedByOwner vacateNotice");
   res.json(populated);
 });
@@ -121,29 +153,47 @@ const allocateResident = asyncHandler(async (req, res) => {
 // Owner: vacate a resident from a room. Unlike a hard "remove", this
 // preserves the resident's stay on lastPG/lastRoom so a separate
 // "Vacated Residents" list can still show their details afterwards.
+// Wrapped in a transaction — the room update and the user's
+// assignment/history update commit or roll back together.
 const vacateResident = asyncHandler(async (req, res) => {
   const { residentId } = req.body;
-  const room = await Room.findById(req.params.roomId).populate("pg");
-  if (!room) throw new AppError("Room not found", 404);
-  if (room.pg.owner.toString() !== req.user._id.toString()) throw new AppError("Not authorized", 403);
 
-  room.residents = room.residents.filter((r) => r.toString() !== residentId);
-  room.occupancy = Math.max(0, room.occupancy - 1);
-  if (room.occupancy < room.capacity) room.status = "available";
-  await room.save();
+  const session = await mongoose.startSession();
+  let resultRoom;
 
-  await User.findByIdAndUpdate(residentId, {
-    lastPG: room.pg._id,
-    lastRoom: room._id,
-    assignedPG: null,
-    assignedRoom: null,
-    moveOutDate: new Date(),
-    vacateNotice: { requested: false, noticeGivenAt: null, plannedDate: null },
-  });
+  try {
+    await session.withTransaction(async () => {
+      const room = await Room.findById(req.params.roomId).populate("pg").session(session);
+      if (!room) throw new AppError("Room not found", 404);
+      if (room.pg.owner.toString() !== req.user._id.toString()) throw new AppError("Not authorized", 403);
 
-  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Resident Vacated", entityType: "Room", entityId: room._id, details: `Room ${room.roomNumber}` });
+      room.residents = room.residents.filter((r) => r.toString() !== residentId);
+      room.occupancy = Math.max(0, room.occupancy - 1);
+      if (room.occupancy < room.capacity) room.status = "available";
+      await room.save({ session });
 
-  const populated = await Room.findById(room._id)
+      await User.findByIdAndUpdate(
+        residentId,
+        {
+          lastPG: room.pg._id,
+          lastRoom: room._id,
+          assignedPG: null,
+          assignedRoom: null,
+          moveOutDate: new Date(),
+          vacateNotice: { requested: false, noticeGivenAt: null, plannedDate: null },
+        },
+        { session }
+      );
+
+      resultRoom = room;
+    });
+  } finally {
+    session.endSession();
+  }
+
+  await logActivity({ owner: req.user._id, actor: req.user._id, action: "Resident Vacated", entityType: "Room", entityId: resultRoom._id, details: `Room ${resultRoom.roomNumber}` });
+
+  const populated = await Room.findById(resultRoom._id)
     .populate("residents", "name email phone photoUrl isVerified invitedByOwner vacateNotice");
   res.json(populated);
 });

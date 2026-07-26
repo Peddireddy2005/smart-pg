@@ -16,8 +16,13 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
  * Idempotent: safe to call more than once for the same resident/room — it
  * will never create a second rent record for the same month, or a second
  * deposit record for the same resident/room.
+ *
+ * Accepts an optional Mongoose `session` so the Payment writes participate
+ * in the caller's transaction (join + room update + payment all commit or
+ * roll back together). notify()/logActivity() remain best-effort and are
+ * NOT part of the transaction, matching their existing never-throw design.
  */
-const chargeResidentOnJoin = async ({ resident, room, pg, ownerId }) => {
+const chargeResidentOnJoin = async ({ resident, room, pg, ownerId, session = null }) => {
   const now = new Date();
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
@@ -40,23 +45,28 @@ const chargeResidentOnJoin = async ({ resident, room, pg, ownerId }) => {
     month,
     year,
     type: "rent",
-  });
+  }).session(session);
 
   if (!existingRent) {
     const dueDate = new Date(year, month - 1, Math.min(dayOfMonth + 5, daysInMonth));
-    const rentPayment = await Payment.create({
-      resident: resident._id,
-      room: room._id,
-      pg: pgId,
-      amount: proratedAmount,
-      month,
-      year,
-      dueDate,
-      type: "rent",
-      note: isProrated
-        ? `Prorated for ${daysRemaining} of ${daysInMonth} days in ${MONTHS[month - 1]}`
-        : "",
-    });
+    const [rentPayment] = await Payment.create(
+      [
+        {
+          resident: resident._id,
+          room: room._id,
+          pg: pgId,
+          amount: proratedAmount,
+          month,
+          year,
+          dueDate,
+          type: "rent",
+          note: isProrated
+            ? `Prorated for ${daysRemaining} of ${daysInMonth} days in ${MONTHS[month - 1]}`
+            : "",
+        },
+      ],
+      { session }
+    );
 
     await notify({
       user: resident._id,
@@ -84,20 +94,25 @@ const chargeResidentOnJoin = async ({ resident, room, pg, ownerId }) => {
       resident: resident._id,
       room: room._id,
       type: "deposit",
-    });
+    }).session(session);
 
     if (!existingDeposit) {
-      const depositPayment = await Payment.create({
-        resident: resident._id,
-        room: room._id,
-        pg: pgId,
-        amount: room.depositAmount,
-        month,
-        year,
-        dueDate: now,
-        type: "deposit",
-        note: "One-time security deposit",
-      });
+      const [depositPayment] = await Payment.create(
+        [
+          {
+            resident: resident._id,
+            room: room._id,
+            pg: pgId,
+            amount: room.depositAmount,
+            month,
+            year,
+            dueDate: now,
+            type: "deposit",
+            note: "One-time security deposit",
+          },
+        ],
+        { session }
+      );
 
       await notify({
         user: resident._id,
