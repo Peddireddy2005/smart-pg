@@ -1,208 +1,122 @@
-# Smart PG — Local Development Setup
+# Smart PG
 
-A full-stack PG management platform. Run it locally in 5 minutes.
+A full-stack paying-guest (PG) accommodation management platform for property owners and their residents — rooms, rent collection, complaints, staff, announcements, and reporting in one place.
 
----
-
-## What you need installed
-
-- **Node.js 22+** — https://nodejs.org
-- **MongoDB** — https://www.mongodb.com/try/download/community (free Community edition)
-
-That's it. Everything else installs via npm.
+**Stack:** React 19 + Vite (frontend) · Node.js/Express + MongoDB/Mongoose (backend) · JWT auth with rotating refresh tokens · Razorpay payments · Cloudinary uploads · Sentry error monitoring
 
 ---
 
-## 1. Get the code running
+## What's in this pass
 
-Open **two terminals** — one for the backend, one for the frontend.
+This update fixes two real bugs found while reviewing the codebase, plus a visual refresh:
 
-### Terminal 1 — Backend
+| File | Issue | Fix |
+|---|---|---|
+| `backend/utils/notify.js` | Was an accidental copy of `generateToken.js` — it exported a JWT signer, not a `notify()` function. Every place that does `const { notify } = require("../utils/notify")` (payments, complaints, invites, room allocation, announcements, vacate notices) was destructuring `undefined` and would throw at runtime the moment it ran. | Rewrote it to actually create a `Notification` document, matching the `{ user, title, message, type, link }` signature every controller already calls it with. |
+| `frontend/src/index.css` | Custom classes (`.input`, `.btn-primary`, `.card`, badges, etc.) were declared as plain CSS *after* the three `@tailwind` directives, so they sat later in the final stylesheet than Tailwind's own utility classes. That silently let `.input`'s own padding win over utility overrides like `pl-9`/`pr-14`, which is why the global search bar's icon and `⌘K` badge were overlapping the placeholder text. | Wrapped the custom classes in `@layer base` / `@layer components` so Tailwind's intended cascade order (base → components → utilities) is respected everywhere in the app, not just in search. |
+| `frontend/src/components/GlobalSearch.jsx` | Depended on absolute positioning fighting the input's padding (root cause of the bug above), and the dropdown styling was plain. | Rebuilt with a flex layout (icon / input / clear-or-⌘K all as siblings, no overlap possible regardless of CSS cascade), a focus ring, a clear (✕) button once you've typed something, and a cleaner grouped results dropdown with icon chips. |
+| `backend/controllers/paymentController.js` → `getInvoice` | The rent receipt PDF was a left-aligned dump of `Label: value` lines with no branding or hierarchy. | Redesigned: dark branded header bar with a "✓ PAID" stamp, a two-column details grid, a highlighted amount panel, and a dashed perforated-stub footer (echoes the ledger-stub motif already used on the homepage hero). |
 
-```bash
-cd backend
-npm install
-cp .env.example .env
-npm run dev
-```
-
-The backend starts at **http://localhost:5000**
-
-### Terminal 2 — Frontend
-
-```bash
-cd frontend
-npm install
-cp .env.example .env
-npm run dev
-```
-
-The app opens at **http://localhost:5173**
+### Also worth knowing about (not changed, flagged for you)
+- `frontend/package.json` pins `react-router-dom: ^6.28.0`, but `frontend/package-lock.json` has actually resolved `react-router-dom` **7.18.1** (and Vite 8 / `@vitejs/plugin-react` 6, not the versions in `package.json`). The app code uses v6-style `<Routes>`/`<Route>`, which is compatible with v7, but the two files disagree on what's "supposed" to be installed. If you run `npm ci` you'll get v7; if you ever regenerate the lockfile from `package.json` you'll get v6. Worth deciding which one you actually want and aligning both files.
+- The Tailwind CSS layer issue above was global, not just the search bar — any place in the app combining `className="input ..."` (or `.card`, `.btn-primary`, etc.) with a Tailwind utility meant to *override* one of those properties had the same silent-override problem. The `@layer` fix resolves it everywhere at once.
 
 ---
 
-## 2. The only env vars you actually need right now
-
-Open `backend/.env` and set these two — everything else is optional and the app works without them:
-
-```
-MONGO_URI=mongodb://localhost:27017/smart-pg
-JWT_SECRET=any-long-random-string-you-make-up
-```
-
----
-
-## 3. Create demo accounts (optional but recommended)
-
-```bash
-cd backend
-npm run seed
-```
-
-This creates three ready-to-use accounts:
-
-| Role | Email | Password |
-|------|-------|----------|
-| Owner | owner@demo.com | password123 |
-| Resident | resident@demo.com | password123 |
-| Admin | admin@demo.com | password123 |
-
-The seed also adds a demo staff member and a sample announcement so those
-screens aren't empty on first login.
-
----
-
-## 4. Optional features — set up when you want them
-
-All optional. The app runs fine without any of them; the relevant feature
-just shows a friendly "not configured" message instead.
-
-### Payments (Razorpay) — for the "Smart PG (Online)" method
-
-Sign up free at https://dashboard.razorpay.com → Settings → API Keys.
-
-`backend/.env`: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, optionally `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_CONVENIENCE_FEE` (defaults to 20).
-`frontend/.env`: `VITE_RAZORPAY_KEY_ID`
-
-Direct UPI and Cash payment methods work without Razorpay — they just need
-the owner's UPI ID set in **Owner → Settings**.
-
-### Image uploads (Cloudinary) — for photos, ID proofs, documents, complaint images, payment screenshots
-
-Sign up free at https://cloudinary.com.
-
-`backend/.env`: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
-
-### Google Sign-In
-
-`console.cloud.google.com` → OAuth 2.0 Client ID → add `http://localhost:5173` as an origin.
-
-`backend/.env`: `GOOGLE_CLIENT_ID` · `frontend/.env`: `VITE_GOOGLE_CLIENT_ID`
-
-### Email notifications (Gmail SMTP)
-
-`backend/.env`: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`
-
-### Mobile OTP login
-
-Works out of the box in development — OTP codes are logged to the backend
-console (and echoed in the API response as `devHint`) since no SMS gateway
-is wired up. To go live, plug a provider (Twilio, MSG91, etc.) into
-`backend/utils/otp.js`.
-
----
-
-## 5. Project structure
+## Project structure
 
 ```
 smart-pg/
-├── backend/
-│   ├── config/         ← DB, Cloudinary, Razorpay, Google, email, logger
-│   ├── controllers/    ← one file per feature area (see list below)
-│   ├── middleware/     ← JWT auth, owner/admin guards, validation, rate limiting
-│   ├── models/         ← Mongoose schemas — one per collection
-│   ├── routes/         ← one file per feature, mounted in app.js
-│   ├── utils/          ← helpers: email templates, OTP, activity log, cron jobs
-│   ├── tests/          ← Jest + Supertest (run with: npm test)
-│   ├── .env.example
-│   ├── server.js       ← entry point
-│   └── seed.js         ← demo data
-│
-└── frontend/
+├── backend/          Express API, MongoDB models, Razorpay/Cloudinary/Sentry config
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── middleware/
+│   ├── utils/
+│   ├── scripts/       one-off migration scripts
+│   ├── tests/          Jest + Supertest, in-memory Mongo replica set
+│   └── server.js
+└── frontend/          React 19 + Vite, Tailwind CSS
     ├── src/
-    │   ├── components/ ← shared UI (search bar, theme toggle, uploaders, etc.)
-    │   ├── layouts/     ← Owner / Resident / Admin shell layouts
-    │   ├── pages/        ← all screens, split into owner/ and resident/
-    │   └── services/    ← one API client module per feature
-    ├── .env.example
-    └── vite.config.js
+    │   ├── pages/       owner/, resident/, admin/, public pages
+    │   ├── layouts/      OwnerLayout, ResidentLayout, AdminLayout
+    │   ├── components/
+    │   └── services/     one file per API resource (axios wrapper)
+    └── vercel.json
 ```
 
 ---
 
-## 6. Full feature list
+## Getting started (local dev, Windows/PowerShell)
 
-**Landing & browsing**
-- Hero search, popular filters (city, locality, rent, gender, sharing, amenities), sort (price/rating/newest), pagination
+### Backend
 
-**Authentication**
-- Email + password, Google Sign-In, and no-password **mobile OTP login** for both owners and residents
+```powershell
+cd backend
+npm install
+copy .env.example .env    # if you have one — otherwise create backend\.env manually
+npm run seed               # optional: demo owner/resident/admin + sample data
+npm run dev                 # nodemon, http://localhost:5000
+```
 
-**Owner tools**
-- PG CRUD with photos, amenities, rules, archive/unarchive
-- Room management (capacity, rent, type, status)
-- Resident allocation by email **or** self-service **QR invite** (spec §7)
-- Rent generation, 3-way **payment approvals** (Razorpay auto / UPI screenshot / cash claim)
-- Complaints with category, photos, and staff assignment
-- **Announcements** broadcast to all current residents (in-app + email)
-- **Staff management** with attendance tracking
-- **Visitor management** — resident invites, owner approval, QR entry/exit logging
-- **Expense tracking** by category with monthly totals
-- **Inventory** tracking with repair history
-- **Reports** — PDF and Excel export (revenue, occupancy, payments, residents, complaints)
-- **Activity log** — full audit trail of every owner-side action
-- **Global search** across residents, PGs, rooms, complaints, payments
-- Payment settings (enable/disable Razorpay/UPI/Cash, UPI ID with auto-generated QR)
-- Business profile settings (logo, bank details, GST)
+### Frontend
 
-**Resident tools**
-- Dashboard, room & roommates view, ID/document verification, documents (rental agreement, police verification)
-- Pay rent 3 ways: Smart PG (Razorpay, auto-verified), Direct UPI (screenshot + owner approval), Cash (claim + owner approval)
-- Downloadable PDF receipts
-- Complaints with photos and category
-- Announcements feed
-- Invite visitors with a QR code
+```powershell
+cd frontend
+npm install
+npm run dev                 # http://localhost:5173, proxies /api to VITE_API_URL or localhost:5000
+```
 
-**Platform admin (minimal, per spec's "Future" note)**
-- Read-only platform stats, owner list with suspend/reactivate, all-PGs view
+### Tests
 
-**Cross-cutting**
-- Light/dark theme toggle
-- In-app notifications for every event (payment, complaint, announcement, visitor, allocation, review)
-
----
-
-## 7. Useful commands
-
-```bash
-# Backend
-npm run dev      # start with hot reload (nodemon)
-npm run seed     # populate demo data
-npm test         # run automated tests (Jest + in-memory MongoDB)
-
-# Frontend
-npm run dev      # start Vite dev server
-npm run build    # build for production (output: frontend/dist/)
+```powershell
+cd backend
+npm test
 ```
 
 ---
 
-## 8. Common issues
+## Environment variables (backend/.env)
 
-**MongoDB connection failed** — make sure MongoDB is running (`mongod` or via MongoDB Compass).
+| Variable | Required | Notes |
+|---|---|---|
+| `MONGO_URI` | Yes | MongoDB connection string |
+| `JWT_SECRET` | Yes | Signs short-lived (~1h) access tokens |
+| `JWT_EXPIRE` | No | Default `1h` |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | No | Default `30`; refresh tokens are stored hashed with a TTL index |
+| `ENCRYPTION_KEY` | Yes, before any ID proof is saved | 64-char hex string (32 bytes). **Never rotate this once data is encrypted** without running a re-encryption migration — back it up outside the repo. |
+| `CLIENT_URLS` | Yes | Comma-separated list of allowed CORS origins |
+| `FRONTEND_URL` | Yes | Used to build invite/reset-password links |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | Yes, for image uploads | |
+| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Yes, for online rent payments | |
+| `RAZORPAY_WEBHOOK_SECRET` | No | Webhook is a no-op (200 OK, no-op) if unset |
+| `RAZORPAY_CONVENIENCE_FEE` | No | Default ₹20 |
+| `GOOGLE_CLIENT_ID` | No | Enables Google sign-in; feature is a no-op if unset |
+| `SENTRY_DSN` | No | Sentry is a no-op if unset |
+| `PORT` | No | Default `5000` |
 
-**Port already in use** — backend uses 5000, frontend uses 5173. Kill the process or change `PORT=` in `backend/.env`.
+Email/SMTP is intentionally not used anywhere — password reset returns a direct link in the API response instead of emailing an OTP, and residents are verified immediately on signup.
 
-**"Payment gateway is not configured" error** — only affects the Smart PG (Razorpay) method; Direct UPI and Cash work without it.
+### Frontend (`frontend/.env`)
 
-**OTP not arriving** — no SMS gateway is wired up in this build; the code is printed to the backend terminal and returned as `devHint` in dev mode.
+| Variable | Notes |
+|---|---|
+| `VITE_API_URL` | Backend origin, e.g. `http://localhost:5000`. Falls back to a relative `/api` if unset. |
+| `VITE_GOOGLE_CLIENT_ID` | Optional — Google sign-in button hides itself if unset. |
+
+---
+
+## Core features
+
+- **Owners:** multi-PG management, rooms & rent generation, QR/code resident invites, staff & attendance, expenses, complaints, announcements, activity log, PDF/Excel reports, analytics.
+- **Residents:** join by QR/code, pay rent three ways (Razorpay / Direct UPI with proof upload / Cash claim — all owner-approved except Razorpay which auto-verifies), raise complaints with photos, vacate notices, reviews.
+- **Security:** AES-256-GCM encryption at rest for ID proof numbers, short-lived JWT access tokens with rotating refresh tokens (revoked on password change), rate limiting, Helmet, Mongo-injection sanitization.
+- **Admin:** read-only platform stats, owner/PG visibility, account suspension.
+
+---
+
+## Deployment
+
+- **Frontend:** Vercel (`frontend/vercel.json` handles SPA rewrites).
+- **Backend:** any Node host with a MongoDB connection; run the ID-proof encryption migration (`npm run migrate:encrypt-id-proofs`) once after first deploying `ENCRYPTION_KEY`.
+- Remember: `ENCRYPTION_KEY` must never change after data is encrypted with it, and should be backed up somewhere outside the repo.

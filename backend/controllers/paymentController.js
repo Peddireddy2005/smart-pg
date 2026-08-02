@@ -424,6 +424,64 @@ const updatePaymentSettings = asyncHandler(async (req, res) => {
   res.json(user);
 });
 
+// --- Receipt / invoice PDF --------------------------------------------------
+//
+// Redesigned to actually look like a receipt: a dark branded header block,
+// a clear "PAID" stamp, a two-column details grid instead of a stacked list
+// of `Label: value` lines, an amount panel that pops, and a perforated-stub
+// footer that echoes the ledger-stub motif used elsewhere in the app
+// (see .stub-edge in index.css / the Home page hero mock).
+
+const INK = "#1F2822";
+const PAPER = "#FBFAF5";
+const BRAND = "#B8823C";
+const SAGE = "#33634A";
+const MUTED = "#6B756E";
+const BORDER = "#DAD4C4";
+
+const drawReceiptHeader = (doc, { statusLabel = "PAID", statusColor = SAGE }) => {
+  const pageWidth = doc.page.width;
+
+  // Dark header bar
+  doc.rect(0, 0, pageWidth, 92).fill(INK);
+
+  doc.fillColor(PAPER).fontSize(22).font("Helvetica-Bold").text("Smart PG", 50, 30);
+  doc.fillColor("#B9C2BC").fontSize(9).font("Helvetica").text("Paying-guest management", 50, 56);
+
+  // Status stamp, top-right
+  const stampWidth = 90;
+  const stampX = pageWidth - 50 - stampWidth;
+  doc.roundedRect(stampX, 28, stampWidth, 28, 6).lineWidth(1.4).strokeColor(statusColor).stroke();
+  doc.fillColor(statusColor).fontSize(12).font("Helvetica-Bold")
+    .text(statusLabel, stampX, 36, { width: stampWidth, align: "center" });
+
+  doc.y = 92;
+};
+
+const drawKeyValueGrid = (doc, rows, startY) => {
+  const colWidth = 250;
+  const leftX = 50;
+  const rightX = 50 + colWidth + 20;
+  let leftY = startY;
+  let rightY = startY;
+
+  rows.forEach(([label, value], i) => {
+    const isLeft = i % 2 === 0;
+    const x = isLeft ? leftX : rightX;
+    const y = isLeft ? leftY : rightY;
+
+    doc.fillColor(MUTED).fontSize(8).font("Helvetica-Bold")
+      .text(label.toUpperCase(), x, y, { width: colWidth, characterSpacing: 0.4 });
+    doc.fillColor("#1A211C").fontSize(11).font("Helvetica")
+      .text(value || "—", x, y + 12, { width: colWidth });
+
+    const rowHeight = 40;
+    if (isLeft) leftY += rowHeight; else rightY += rowHeight;
+  });
+
+  return Math.max(leftY, rightY);
+};
+
 const getInvoice = asyncHandler(async (req, res) => {
   const payment = await Payment.findById(req.params.id)
     .populate("pg", "name address city")
@@ -442,27 +500,59 @@ const getInvoice = asyncHandler(async (req, res) => {
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename=receipt_${payment._id}.pdf`);
 
-  const doc = new PDFDocument({ margin: 50 });
+  const doc = new PDFDocument({ size: "A4", margin: 0 });
   doc.pipe(res);
 
-  doc.fontSize(20).fillColor("#ff7a09").text("Smart PG", { align: "left" });
-  doc.fontSize(10).fillColor("#000").text("Rent Payment Receipt").moveDown(1.5);
+  drawReceiptHeader(doc, { statusLabel: "✓ PAID", statusColor: SAGE });
 
-  doc.fontSize(11);
-  doc.text(`Receipt #: ${payment._id}`);
-  doc.text(`Date Paid: ${payment.paidAt ? new Date(payment.paidAt).toLocaleDateString() : "-"}`);
-  doc.text(`PG: ${payment.pg.name}`);
-  doc.text(`Room: ${payment.room.roomNumber}`);
-  doc.text(`Resident: ${payment.resident.name} (${payment.resident.email})`);
-  doc.text(`Period: ${MONTHS[payment.month - 1]} ${payment.year}`);
-  doc.text(`Payment Method: ${payment.paymentMethod || "-"}`);
-  doc.text(`Verified: ${payment.verifiedBy === "automatic" ? "Automatically (Razorpay)" : payment.approvedBy ? `By owner (${payment.approvedBy.name})` : "By owner"}`);
-  if (payment.upiTransactionId) doc.text(`UPI Transaction ID: ${payment.upiTransactionId}`);
-  doc.moveDown(1);
+  // Receipt title + subtitle
+  doc.fillColor("#1A211C").fontSize(18).font("Helvetica-Bold")
+    .text("Rent Payment Receipt", 50, 116);
+  doc.fillColor(MUTED).fontSize(10).font("Helvetica")
+    .text(`${MONTHS[payment.month - 1]} ${payment.year} · Receipt #${payment._id}`, 50, 140);
 
-  doc.fontSize(14).fillColor("#16a34a").text(`Amount Paid: Rs. ${payment.amount.toLocaleString()}`, { underline: true });
-  doc.moveDown(2);
-  doc.fontSize(9).fillColor("#888").text("This is a system-generated receipt and does not require a signature.");
+  doc.moveTo(50, 165).lineTo(doc.page.width - 50, 165).lineWidth(1).strokeColor(BORDER).stroke();
+
+  // Two-column details grid
+  const rows = [
+    ["PG", payment.pg.name],
+    ["Room", `Room ${payment.room.roomNumber}`],
+    ["Resident", payment.resident.name],
+    ["Email", payment.resident.email],
+    ["Date Paid", payment.paidAt ? new Date(payment.paidAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"],
+    ["Payment Method", payment.paymentMethod ? payment.paymentMethod.replace("_", " ").toUpperCase() : "—"],
+    ["Verified", payment.verifiedBy === "automatic" ? "Automatically (Razorpay)" : payment.approvedBy ? `By owner — ${payment.approvedBy.name}` : "By owner"],
+    ["UPI Transaction ID", payment.upiTransactionId || "—"],
+  ];
+  const afterGridY = drawKeyValueGrid(doc, rows, 185);
+
+  // Amount panel
+  const panelY = afterGridY + 15;
+  const panelHeight = 70;
+  doc.roundedRect(50, panelY, doc.page.width - 100, panelHeight, 8).fill("#EEF4EF");
+  doc.roundedRect(50, panelY, doc.page.width - 100, panelHeight, 8).lineWidth(1).strokeColor("#C6DBC9").stroke();
+
+  doc.fillColor(SAGE).fontSize(9).font("Helvetica-Bold")
+    .text("AMOUNT PAID", 70, panelY + 16, { characterSpacing: 0.5 });
+  doc.fillColor("#1A211C").fontSize(28).font("Helvetica-Bold")
+    .text(`Rs. ${payment.amount.toLocaleString("en-IN")}`, 70, panelY + 30);
+
+  if (payment.convenienceFee > 0) {
+    doc.fillColor(MUTED).fontSize(9).font("Helvetica")
+      .text(`Includes Rs. ${payment.convenienceFee} convenience fee`, 70, panelY + 58);
+  }
+
+  // Perforated stub footer
+  const footerY = panelY + panelHeight + 40;
+  doc.save();
+  doc.dash(3, { space: 3 }).moveTo(50, footerY).lineTo(doc.page.width - 50, footerY).lineWidth(1).strokeColor(BORDER).stroke();
+  doc.undash();
+  doc.restore();
+
+  doc.fillColor(MUTED).fontSize(8).font("Helvetica")
+    .text("This is a system-generated receipt and does not require a signature.", 50, footerY + 14);
+  doc.fillColor(BRAND).fontSize(8).font("Helvetica-Bold")
+    .text("Smart PG", 50, footerY + 28);
 
   doc.end();
 });
