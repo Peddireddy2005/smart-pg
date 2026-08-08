@@ -1,6 +1,8 @@
 // Minimal offline-friendly service worker: cache the app shell, network-first
 // for everything else so data stays fresh.
-const CACHE = "smart-pg-shell-v1";
+// Cache name bumped (v1 -> v2) to force every existing client to drop their
+// stale cached favicon.svg / index.html once this file deploys.
+const CACHE = "smart-pg-shell-v2";
 const SHELL = ["/", "/index.html", "/favicon.svg", "/manifest.json"];
 
 self.addEventListener("install", (e) => {
