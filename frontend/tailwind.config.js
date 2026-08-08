@@ -10,34 +10,46 @@ export default {
         data: ["\"IBM Plex Mono\"", "ui-monospace", "monospace"],
       },
       colors: {
-        // Primary accent — aged brass, evokes keys / receipts / property
-        // deeds rather than a generic SaaS orange.
+        // Primary accent — teal, replaces the old aged-brass "brand" scale.
+        // Derived from the bright teal band in the dark-theme swatch.
         brand: {
-          50: "#FBF4E7",
-          100: "#F3E3C2",
-          200: "#E8CD95",
-          300: "#DAB268",
-          400: "#C89A48",
-          500: "#B8823C",
-          600: "#9C6A2E",
-          700: "#7C5324",
-          800: "#5E3E1B",
-          900: "#4A3115",
+          50: "#E6FBF8",
+          100: "#C7F0EA",
+          200: "#A3E4DC",
+          300: "#74C7BD",
+          400: "#3DBDB0",
+          500: "#14B8A6",
+          600: "#0F9488",
+          700: "#0C7A70",
+          800: "#0A6058",
+          900: "#084A44",
         },
-        // Ledger ink — used for dark surfaces instead of pure slate-950
+        // Dark-surface scale — from the left (dark) swatch: near-black navy,
+        // slate, teal accent, light gray.
         ink: {
-          50: "#F2F4F2",
-          100: "#DEE3DF",
-          400: "#5A655D",
-          700: "#28322C",
-          800: "#1F2822",
-          900: "#161E19",
-          950: "#0F1512",
+          50: "#EEEEEE",
+          100: "#DADFE6",
+          400: "#6B7280",
+          700: "#3A4150",
+          800: "#2A303D",
+          900: "#232837",
+          950: "#1A1F29",
         },
+        // Light-surface scale — from the right (light) swatch: pale mint,
+        // light cyan, pale teal, medium teal.
         paper: {
-          DEFAULT: "#F1EEE5",
-          raised: "#FBFAF5",
+          DEFAULT: "#DFFAF6",
+          raised: "#F2FCFA",
         },
+        mist: {
+          50: "#F2FCFA",
+          100: "#DFFAF6",
+          200: "#C7F0EA",
+          300: "#A3E4DC",
+          500: "#74C7BD",
+          600: "#4FA89C",
+        },
+        // Kept for any leftover references to the old sage/rust accents.
         sage: {
           50: "#EEF4EF",
           200: "#C6DBC9",

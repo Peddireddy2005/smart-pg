@@ -5,6 +5,12 @@
 @tailwind utilities;
 
 /*
+  Palette update: dark surfaces now use the navy/slate/teal swatch, light
+  surfaces use the mint/cyan swatch. Values here mirror tailwind.config.js's
+  ink/mist/brand scales — kept as literal hex because these classes are
+  plain CSS (not Tailwind utility classes), so they don't pick up config
+  changes automatically.
+
   IMPORTANT: everything below used to live as plain CSS *after* the
   @tailwind directives. That meant these hand-written classes (.input,
   .btn-primary, .card, etc.) sat later in the final stylesheet than
@@ -21,31 +27,29 @@
 @layer base {
   * { font-family: "Inter", sans-serif; }
   h1, h2, h3, h4, h5, h6 { font-family: "Fraunces", serif; font-weight: 600; letter-spacing: -0.01em; }
-  body { background: #F1EEE5; transition: background-color 0.2s ease; }
-  .dark body { background: #0F1512; }
+  body { background: #F2FCFA; transition: background-color 0.2s ease; }
+  .dark body { background: #1A1F29; }
 }
 
 @layer components {
   /* ---- Buttons ---------------------------------------------------------- */
-  /* Slightly squarer corners and a hairline border instead of a floating
-     pill — reads as "form control", not "marketing button". */
 
   .btn-primary {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background-color: #1F2822;
-    color: #F1EEE5;
+    background-color: #0F9488;
+    color: #F2FCFA;
     font-weight: 600;
     padding: 10px 18px;
     border-radius: 8px;
-    border: 1px solid #1F2822;
+    border: 1px solid #0F9488;
     cursor: pointer;
     font-size: 14px;
     transition: background 0.15s, transform 0.1s;
     text-decoration: none;
   }
-  .btn-primary:hover:not(:disabled) { background-color: #354039; }
+  .btn-primary:hover:not(:disabled) { background-color: #0C7A70; }
   .btn-primary:active:not(:disabled) { transform: translateY(1px); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -53,21 +57,21 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #FBFAF5;
-    color: #28322C;
+    background: #FFFFFF;
+    color: #232837;
     font-weight: 600;
     padding: 10px 18px;
     border-radius: 8px;
-    border: 1px solid #DAD4C4;
+    border: 1px solid #C7F0EA;
     cursor: pointer;
     font-size: 14px;
     transition: border-color 0.15s, background 0.15s;
     text-decoration: none;
   }
-  .btn-secondary:hover:not(:disabled) { border-color: #B8823C; background: #FBF4E7; }
+  .btn-secondary:hover:not(:disabled) { border-color: #14B8A6; background: #E6FBF8; }
   .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
-  .dark .btn-secondary { background: #1F2822; color: #DEE3DF; border-color: #3A443E; }
-  .dark .btn-secondary:hover:not(:disabled) { background: #28322C; border-color: #B8823C; }
+  .dark .btn-secondary { background: #232837; color: #DADFE6; border-color: #3A4150; }
+  .dark .btn-secondary:hover:not(:disabled) { background: #2A303D; border-color: #14B8A6; }
 
   .btn-danger {
     display: inline-flex;
@@ -88,34 +92,34 @@
   /* ---- Surfaces ----------------------------------------------------------- */
 
   .card {
-    background: #FBFAF5;
+    background: #FFFFFF;
     border-radius: 10px;
-    border: 1px solid #E4DFD1;
-    box-shadow: 0 1px 2px rgba(22, 30, 25, 0.04);
+    border: 1px solid #C7F0EA;
+    box-shadow: 0 1px 2px rgba(26, 31, 41, 0.04);
   }
-  .dark .card { background: #1A211C; border-color: #2E3931; color: #E7E9E4; box-shadow: none; }
+  .dark .card { background: #232837; border-color: #3A4150; color: #E7E9E4; box-shadow: none; }
 
   .input {
     width: 100%;
-    border: 1px solid #DAD4C4;
+    border: 1px solid #C7F0EA;
     border-radius: 8px;
     padding: 10px 14px;
-    background: #FBFAF5;
+    background: #FFFFFF;
     font-size: 14px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .input:focus {
-    border-color: #B8823C;
-    box-shadow: 0 0 0 3px rgba(184, 130, 60, 0.16);
+    border-color: #14B8A6;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.16);
   }
-  .dark .input { background: #161E19; border-color: #2E3931; color: #E7E9E4; }
+  .dark .input { background: #1A1F29; border-color: #3A4150; color: #E7E9E4; }
 
   .label {
     display: block;
     font-size: 11px;
     font-weight: 600;
-    color: #6B756E;
+    color: #6B7280;
     margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -126,7 +130,7 @@
 
   .badge-green  { background:#EEF4EF; color:#33634A; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #C6DBC9; }
   .badge-yellow { background:#FBF4E7; color:#7C5324; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #E8CD95; }
-  .badge-blue   { background:#EEF1F4; color:#334B63; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #C7D3DE; }
+  .badge-blue   { background:#E6FBF8; color:#0C7A70; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #A3E4DC; }
   .badge-red    { background:#F8ECE8; color:#973B2E; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #E4BFB2; }
   .badge-gray   { background:#F2F1EB; color:#5A655D; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #DEDAD0; }
   .badge-purple { background:#F1EEF6; color:#5B4B84; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #D9D0E8; }
@@ -148,15 +152,15 @@
     font-weight: 500;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #B8823C;
+    color: #0F9488;
   }
 
   /* Perforated-stub edge — signature motif reused on receipt-like cards
      (invoices, the homepage hero mock). Purely decorative dashed rule. */
   .stub-edge {
-    border-left: 2px dashed #DAD4C4;
+    border-left: 2px dashed #C7F0EA;
   }
-  .dark .stub-edge { border-left-color: #3A443E; }
+  .dark .stub-edge { border-left-color: #3A4150; }
 
   .sidebar-link {
     display: flex;
@@ -177,8 +181,8 @@
   .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
   .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-  .skeleton { background: linear-gradient(90deg, #E7E2D3 25%, #DED8C6 37%, #E7E2D3 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; border-radius: 8px; }
-  .dark .skeleton { background: linear-gradient(90deg, #1A211C 25%, #232B25 37%, #1A211C 63%); background-size: 400% 100%; }
+  .skeleton { background: linear-gradient(90deg, #DFFAF6 25%, #C7F0EA 37%, #DFFAF6 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; border-radius: 8px; }
+  .dark .skeleton { background: linear-gradient(90deg, #232837 25%, #2A303D 37%, #232837 63%); background-size: 400% 100%; }
 
   /* Dark scrollbar for the dark sidebar nav (Owner/Resident/Admin layouts) */
   .sidebar-scroll {

@@ -5,9 +5,16 @@ const IV_LENGTH = 12;
 
 const getKey = () => {
   const key = process.env.ENCRYPTION_KEY;
-  if (!key) throw new Error("ENCRYPTION_KEY is not set in environment variables");
+  if (!key) {
+    throw new Error(
+      "ENCRYPTION_KEY is not set. Set a 64-character hex string (32 bytes) in your backend environment — " +
+      "generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+    );
+  }
   const buf = Buffer.from(key, "hex");
-  if (buf.length !== 32) throw new Error("ENCRYPTION_KEY must be a 64-character hex string (32 bytes)");
+  if (buf.length !== 32) {
+    throw new Error("ENCRYPTION_KEY must be a 64-character hex string (32 bytes)");
+  }
   return buf;
 };
 
