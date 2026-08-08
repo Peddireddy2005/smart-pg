@@ -4,6 +4,21 @@ import api from "../../services/api";
 import { getSession, saveSession } from "../../services/authService";
 import ImageUploader from "../../components/ImageUploader";
 
+// Fields the backend already requires before a resident can join a room
+// (see backend/controllers/inviteController.js claimInvite). Marked with a
+// red asterisk here so residents know to fill them in ahead of time,
+// instead of discovering it only when the join attempt fails.
+const REQUIRED_FIELDS = ["phone", "emergencyContact", "emergencyPhone", "idProofType", "idProofNumber", "idProofUrl"];
+
+function RequiredLabel({ children, field }) {
+  const isRequired = REQUIRED_FIELDS.includes(field);
+  return (
+    <label className="label">
+      {children} {isRequired && <span className="text-red-500">*</span>}
+    </label>
+  );
+}
+
 export default function MyProfile() {
   const [form, setForm] = useState({
     name: "", phone: "", emergencyContact: "", emergencyPhone: "",
@@ -30,6 +45,8 @@ export default function MyProfile() {
     });
   }, []);
 
+  const missingRequired = REQUIRED_FIELDS.filter((f) => !form[f]);
+
   const save = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -38,6 +55,9 @@ export default function MyProfile() {
       const stored = getSession();
       saveSession({ ...stored, name: data.name, photoUrl: data.photoUrl });
       toast.success("Profile updated successfully!");
+      if (missingRequired.length > 0) {
+        toast("Fill in the fields marked * before you can join a PG", { icon: "⚠️" });
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save");
     } finally {
@@ -64,7 +84,12 @@ export default function MyProfile() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-6">My Profile</h1>
+      <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-2">My Profile</h1>
+      {missingRequired.length > 0 && (
+        <p className="text-amber-600 text-sm mb-4">
+          Fields marked <span className="text-red-500 font-semibold">*</span> are required before you can join a PG.
+        </p>
+      )}
 
       <form onSubmit={save} className="space-y-5">
         <div className="card p-5">
@@ -80,16 +105,28 @@ export default function MyProfile() {
         <div className="card p-5 space-y-4">
           <h2 className="font-heading font-semibold text-slate-800 dark:text-white">Personal Information</h2>
           <div>
-            <label className="label">Full Name</label>
+            <RequiredLabel field="name">Full Name</RequiredLabel>
             <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="label">Phone</label><input className="input" placeholder="+91 98765 43210" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-            <div><label className="label">Home Address</label><input className="input" placeholder="Hometown address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+            <div>
+              <RequiredLabel field="phone">Phone</RequiredLabel>
+              <input className="input" placeholder="+91 98765 43210" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            <div>
+              <RequiredLabel field="address">Home Address</RequiredLabel>
+              <input className="input" placeholder="Hometown address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="label">Emergency Contact</label><input className="input" placeholder="Parent/Guardian name" value={form.emergencyContact} onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })} /></div>
-            <div><label className="label">Emergency Phone</label><input className="input" placeholder="+91 99999 99999" value={form.emergencyPhone} onChange={(e) => setForm({ ...form, emergencyPhone: e.target.value })} /></div>
+            <div>
+              <RequiredLabel field="emergencyContact">Emergency Contact</RequiredLabel>
+              <input className="input" placeholder="Parent/Guardian name" value={form.emergencyContact} onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })} />
+            </div>
+            <div>
+              <RequiredLabel field="emergencyPhone">Emergency Phone</RequiredLabel>
+              <input className="input" placeholder="+91 99999 99999" value={form.emergencyPhone} onChange={(e) => setForm({ ...form, emergencyPhone: e.target.value })} />
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div><label className="label">Occupation</label><input className="input" value={form.occupation} onChange={(e) => setForm({ ...form, occupation: e.target.value })} /></div>
@@ -107,16 +144,19 @@ export default function MyProfile() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">ID Type</label>
+              <RequiredLabel field="idProofType">ID Type</RequiredLabel>
               <select className="input" value={form.idProofType} onChange={(e) => setForm({ ...form, idProofType: e.target.value })}>
                 <option value="">Select ID type</option>
                 {["Aadhaar", "PAN", "Passport", "Driving License", "Voter ID"].map((t) => <option key={t}>{t}</option>)}
               </select>
             </div>
-            <div><label className="label">ID Number</label><input className="input" placeholder="e.g. XXXX XXXX XXXX" value={form.idProofNumber} onChange={(e) => setForm({ ...form, idProofNumber: e.target.value })} /></div>
+            <div>
+              <RequiredLabel field="idProofNumber">ID Number</RequiredLabel>
+              <input className="input" placeholder="e.g. XXXX XXXX XXXX" value={form.idProofNumber} onChange={(e) => setForm({ ...form, idProofNumber: e.target.value })} />
+            </div>
           </div>
           <div>
-            <label className="label">Upload ID Document</label>
+            <RequiredLabel field="idProofUrl">Upload ID Document</RequiredLabel>
             {form.idProofUrl ? (
               <div className="flex items-center gap-3 mt-1">
                 <img src={form.idProofUrl} alt="ID" className="w-24 h-16 object-cover rounded-xl border border-gray-200 dark:border-slate-700" />
