@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { FileText, FileSpreadsheet } from "lucide-react";
 import { getReportSummary, downloadReportPDF, downloadReportExcel } from "../../services/reportService";
 
 const MONTHS_LABEL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -32,7 +33,7 @@ export default function Reports() {
 
   return (
     <div>
-      <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-6">Reports</h1>
+      <h1 className="font-heading text-3xl font-bold text-slate-900 mb-6">Reports</h1>
 
       <div className="flex items-center gap-3 mb-6">
         <select className="input w-auto" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
@@ -45,34 +46,35 @@ export default function Reports() {
         <p className="text-slate-400">Loading...</p>
       ) : summary && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {[
-              { label: "PGs", value: summary.totalPGs, icon: "🏘️" },
-              { label: "Rooms", value: summary.totalRooms, icon: "🚪" },
-              { label: "Residents", value: summary.totalResidents, icon: "👥" },
-              { label: "Occupancy", value: `${summary.occupancyPct}%`, icon: "📈" },
-              { label: "Collected", value: `₹${summary.totalCollected.toLocaleString()}`, icon: "💰" },
-              { label: "Pending", value: `₹${summary.totalPending.toLocaleString()}`, icon: "⏳" },
-              { label: "Open Complaints", value: summary.openComplaints, icon: "⚑" },
-              { label: "Total Complaints", value: summary.totalComplaints, icon: "📋" },
-            ].map((s) => (
-              <div key={s.label} className="card p-4">
-                <p className="text-2xl mb-1">{s.icon}</p>
-                <p className="font-heading text-xl font-bold text-slate-800 dark:text-white">{s.value}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{s.label}</p>
-              </div>
-            ))}
+          <div className="card p-5 mb-8">
+            <div className="divide-y divide-[#EAF6F3]">
+              {[
+                { label: "PGs", value: summary.totalPGs },
+                { label: "Rooms", value: summary.totalRooms },
+                { label: "Residents", value: summary.totalResidents },
+                { label: "Occupancy", value: `${summary.occupancyPct}%` },
+                { label: "Collected", value: `₹${summary.totalCollected.toLocaleString()}` },
+                { label: "Pending", value: `₹${summary.totalPending.toLocaleString()}` },
+                { label: "Open complaints", value: summary.openComplaints },
+                { label: "Total complaints", value: summary.totalComplaints },
+              ].map((s) => (
+                <div key={s.label} className="ledger-row">
+                  <span className="text-sm text-slate-600">{s.label}</span>
+                  <span className="amount font-heading font-semibold text-slate-800 text-lg">{s.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="card p-6">
-            <h2 className="font-heading font-semibold text-slate-800 dark:text-white mb-2">Download Full Report</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Includes payments, residents, complaints, and revenue/occupancy summary for {MONTHS_LABEL[month - 1]} {year}.</p>
+            <h2 className="font-heading font-semibold text-slate-800 mb-2">Download Full Report</h2>
+            <p className="text-sm text-slate-500 mb-4">Includes payments, residents, complaints, and revenue/occupancy summary for {MONTHS_LABEL[month - 1]} {year}.</p>
             <div className="flex gap-3">
-              <button disabled={!!downloading} onClick={() => handleDownload("pdf")} className="btn-primary">
-                {downloading === "pdf" ? "Preparing..." : "📄 Download PDF"}
+              <button disabled={!!downloading} onClick={() => handleDownload("pdf")} className="btn-primary inline-flex items-center gap-1.5">
+                <FileText size={15} /> {downloading === "pdf" ? "Preparing..." : "Download PDF"}
               </button>
-              <button disabled={!!downloading} onClick={() => handleDownload("excel")} className="btn-secondary">
-                {downloading === "excel" ? "Preparing..." : "📊 Download Excel"}
+              <button disabled={!!downloading} onClick={() => handleDownload("excel")} className="btn-secondary inline-flex items-center gap-1.5">
+                <FileSpreadsheet size={15} /> {downloading === "excel" ? "Preparing..." : "Download Excel"}
               </button>
             </div>
           </div>

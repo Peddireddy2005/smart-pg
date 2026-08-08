@@ -26,7 +26,6 @@ const AddRoom = lazy(() => import("./pages/owner/AddRoom"));
 const EditRoom = lazy(() => import("./pages/owner/EditRoom"));
 const OwnerPayments = lazy(() => import("./pages/owner/OwnerPayments"));
 const OwnerComplaints = lazy(() => import("./pages/owner/OwnerComplaints"));
-const OwnerAnalytics = lazy(() => import("./pages/owner/OwnerAnalytics"));
 const ResidentProfile = lazy(() => import("./pages/owner/ResidentProfile"));
 const AllocateResident = lazy(() => import("./pages/owner/AllocateResident"));
 const OwnerAnnouncements = lazy(() => import("./pages/owner/Announcements"));
@@ -103,7 +102,6 @@ export default function App() {
             <Route path="/owner" element={<Guard role="owner"><OwnerLayout /></Guard>}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<OwnerDashboard />} />
-              <Route path="analytics" element={<OwnerAnalytics />} />
               <Route path="add-pg" element={<AddPG />} />
               <Route path="pg/:id" element={<OwnerPGDetails />} />
               <Route path="pg/:id/edit" element={<EditPG />} />

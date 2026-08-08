@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Megaphone, Droplets, IndianRupee, PartyPopper, Sparkles } from "lucide-react";
 import api from "../../services/api";
 import { createAnnouncement, getOwnerAnnouncements, deleteAnnouncement } from "../../services/announcementService";
 import ConfirmModal from "../../components/ConfirmModal";
 
 const TYPES = ["General", "Water Shutdown", "Rent Reminder", "Holiday", "Cleaning"];
-const TYPE_ICON = { General: "📣", "Water Shutdown": "🚰", "Rent Reminder": "₹", Holiday: "🎉", Cleaning: "🧹" };
+const TYPE_ICON = { General: Megaphone, "Water Shutdown": Droplets, "Rent Reminder": IndianRupee, Holiday: PartyPopper, Cleaning: Sparkles };
 
 export default function Announcements() {
   const [pgs, setPgs] = useState([]);
@@ -53,10 +54,10 @@ export default function Announcements() {
 
   return (
     <div>
-      <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-6">Announcements</h1>
+      <h1 className="font-heading text-3xl font-bold text-slate-900 mb-6">Announcements</h1>
 
       <form onSubmit={submit} className="card p-6 mb-8 space-y-4">
-        <h2 className="font-heading font-semibold text-slate-800 dark:text-white">Post a Notice</h2>
+        <h2 className="font-heading font-semibold text-slate-800">Post a Notice</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">PG</label>
@@ -79,27 +80,30 @@ export default function Announcements() {
           <label className="label">Message</label>
           <textarea className="input" rows={3} required placeholder="Details for residents..." value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
         </div>
-        <button disabled={posting || !pgs.length} className="btn-primary">
-          {posting ? "Posting..." : "📣 Notify All Residents"}
+        <button disabled={posting || !pgs.length} className="btn-primary inline-flex items-center gap-1.5">
+          <Megaphone size={15} /> {posting ? "Posting..." : "Notify All Residents"}
         </button>
         {!pgs.length && !loading && <p className="text-xs text-amber-600">Add a PG first to post announcements.</p>}
       </form>
 
-      <h2 className="font-heading font-semibold text-slate-800 dark:text-white mb-3">History</h2>
+      <h2 className="font-heading font-semibold text-slate-800 mb-3">History</h2>
       {loading ? <p className="text-slate-400">Loading...</p> : announcements.length === 0 ? (
         <p className="text-slate-400">No announcements posted yet.</p>
       ) : (
         <div className="space-y-3">
-          {announcements.map((a) => (
-            <div key={a._id} className="card p-4 flex justify-between items-start gap-4">
-              <div>
-                <p className="font-semibold text-slate-800 dark:text-white">{TYPE_ICON[a.type] || "📣"} {a.title}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{a.message}</p>
-                <p className="text-xs text-slate-400 mt-1.5">{a.pg?.name} · {new Date(a.createdAt).toLocaleString()}</p>
+          {announcements.map((a) => {
+            const Icon = TYPE_ICON[a.type] || Megaphone;
+            return (
+              <div key={a._id} className="card p-4 flex justify-between items-start gap-4">
+                <div>
+                  <p className="font-semibold text-slate-800 flex items-center gap-2"><Icon size={15} className="text-slate-400" /> {a.title}</p>
+                  <p className="text-sm text-slate-500 mt-1">{a.message}</p>
+                  <p className="text-xs text-slate-400 mt-1.5">{a.pg?.name} · {new Date(a.createdAt).toLocaleString()}</p>
+                </div>
+                <button onClick={() => setDeleting(a._id)} className="btn-danger text-xs shrink-0">Delete</button>
               </div>
-              <button onClick={() => setDeleting(a._id)} className="btn-danger text-xs shrink-0">Delete</button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

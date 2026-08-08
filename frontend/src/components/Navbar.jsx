@@ -2,7 +2,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { LayoutGrid } from "lucide-react";
 import { getSession, logout as logoutUser } from "../services/authService";
-import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -32,23 +31,21 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-paper-raised dark:bg-ink-950 border-b border-[#DAD4C4] dark:border-ink-700 sticky top-0 z-50">
+    <nav className="bg-paper-raised border-b border-[#DAD4C4] sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-ink-900 text-paper flex items-center justify-center font-heading font-semibold text-sm">S</div>
-          <span className="font-heading text-xl font-semibold text-ink-900 dark:text-paper">Smart PG</span>
+          <span className="font-heading text-xl font-semibold text-ink-900">Smart PG</span>
         </Link>
 
         <div className="flex items-center gap-4">
-          <Link to="/pgs" className="text-ink-400 dark:text-ink-100 hover:text-brand-500 font-medium text-sm hidden sm:block">
+          <Link to="/pgs" className="text-ink-400 hover:text-brand-500 font-medium text-sm hidden sm:block">
             Browse PGs
           </Link>
 
-          <ThemeToggle dark={false} />
-
           {!user ? (
             <>
-              <Link to="/login" className="text-ink-400 dark:text-ink-100 hover:text-brand-500 font-medium text-sm">Login</Link>
+              <Link to="/login" className="text-ink-400 hover:text-brand-500 font-medium text-sm">Login</Link>
               <Link to="/signup" className="btn-primary text-sm py-2 px-4">Get Started</Link>
             </>
           ) : (

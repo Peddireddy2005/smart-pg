@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Zap, Droplets, Wrench, Wifi, Users, Hammer, Pin } from "lucide-react";
 import api from "../../services/api";
 import { createExpense, getOwnerExpenses, deleteExpense } from "../../services/expenseService";
 import ConfirmModal from "../../components/ConfirmModal";
 
 const CATEGORIES = ["Electricity", "Water", "Maintenance", "Internet", "Salary", "Repairs", "Other"];
-const CATEGORY_ICON = { Electricity: "⚡", Water: "🚰", Maintenance: "🛠️", Internet: "📶", Salary: "💵", Repairs: "🔧", Other: "📌" };
+const CATEGORY_ICON = { Electricity: Zap, Water: Droplets, Maintenance: Wrench, Internet: Wifi, Salary: Users, Repairs: Hammer, Other: Pin };
 
 export default function Expenses() {
   const now = new Date();
@@ -63,10 +64,10 @@ export default function Expenses() {
 
   return (
     <div>
-      <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-6">Expenses</h1>
+      <h1 className="font-heading text-3xl font-bold text-slate-900 mb-6">Expenses</h1>
 
       <form onSubmit={submit} className="card p-6 mb-8 space-y-4">
-        <h2 className="font-heading font-semibold text-slate-800 dark:text-white">Record Expense</h2>
+        <h2 className="font-heading font-semibold text-slate-800">Record Expense</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">PG</label>
@@ -105,35 +106,41 @@ export default function Expenses() {
         <input className="input w-24" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="card p-4 bg-red-50 dark:bg-red-900/20">
-          <p className="text-xs text-slate-500 dark:text-slate-400">Total This Month</p>
-          <p className="font-heading text-xl font-bold text-red-600">₹{data.total.toLocaleString()}</p>
+      <div className="card p-5 mb-6">
+        <div className="ledger-row">
+          <span className="text-sm font-medium text-red-600">Total this month</span>
+          <span className="amount font-heading font-bold text-red-600 text-xl">₹{data.total.toLocaleString()}</span>
         </div>
-        {Object.entries(data.byCategory).slice(0, 3).map(([cat, amt]) => (
-          <div key={cat} className="card p-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400">{CATEGORY_ICON[cat]} {cat}</p>
-            <p className="font-heading text-xl font-bold text-slate-700 dark:text-slate-200">₹{amt.toLocaleString()}</p>
-          </div>
-        ))}
+        {Object.entries(data.byCategory).map(([cat, amt]) => {
+          const Icon = CATEGORY_ICON[cat] || Pin;
+          return (
+            <div key={cat} className="ledger-row">
+              <span className="flex items-center gap-2.5 text-sm text-slate-600"><Icon size={16} className="text-slate-400" /> {cat}</span>
+              <span className="amount font-semibold text-slate-700">₹{amt.toLocaleString()}</span>
+            </div>
+          );
+        })}
       </div>
 
       {loading ? <p className="text-slate-400">Loading...</p> : data.expenses.length === 0 ? (
         <p className="text-slate-400">No expenses recorded for this period.</p>
       ) : (
         <div className="card overflow-hidden">
-          {data.expenses.map((e) => (
-            <div key={e._id} className="px-5 py-3 border-b dark:border-slate-700 last:border-0 flex justify-between items-center">
-              <div>
-                <p className="font-medium text-sm text-slate-800 dark:text-white">{CATEGORY_ICON[e.category]} {e.category}{e.note ? ` — ${e.note}` : ""}</p>
-                <p className="text-xs text-slate-400">{e.pg?.name} · {new Date(e.date).toLocaleDateString()}</p>
+          {data.expenses.map((e) => {
+            const Icon = CATEGORY_ICON[e.category] || Pin;
+            return (
+              <div key={e._id} className="px-5 py-3 border-b last:border-0 flex justify-between items-center">
+                <div>
+                  <p className="font-medium text-sm text-slate-800 flex items-center gap-2"><Icon size={14} className="text-slate-400" /> {e.category}{e.note ? ` — ${e.note}` : ""}</p>
+                  <p className="text-xs text-slate-400">{e.pg?.name} · {new Date(e.date).toLocaleDateString()}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="amount font-semibold text-slate-700">₹{e.amount.toLocaleString()}</span>
+                  <button onClick={() => setDeleting(e._id)} className="btn-danger text-xs">Delete</button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="font-semibold text-slate-700 dark:text-slate-200">₹{e.amount.toLocaleString()}</span>
-                <button onClick={() => setDeleting(e._id)} className="btn-danger text-xs">Delete</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -21,13 +21,13 @@ export default function AdminOwners() {
 
   return (
     <div>
-      <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-6">Owners</h1>
+      <h1 className="font-heading text-3xl font-bold text-slate-900 mb-6">Owners</h1>
       {loading ? <p className="text-slate-400">Loading...</p> : (
         <div className="card overflow-hidden">
           {owners.map((o) => (
-            <div key={o._id} className="px-5 py-3 border-b dark:border-slate-700 last:border-0 flex justify-between items-center">
+            <div key={o._id} className="px-5 py-3 border-b last:border-0 flex justify-between items-center">
               <div>
-                <p className="font-medium text-sm text-slate-800 dark:text-white">{o.name} {o.businessName ? `— ${o.businessName}` : ""}</p>
+                <p className="font-medium text-sm text-slate-800">{o.name} {o.businessName ? `— ${o.businessName}` : ""}</p>
                 <p className="text-xs text-slate-400">{o.email}</p>
               </div>
               <div className="flex items-center gap-3">

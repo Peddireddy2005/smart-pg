@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Building2 } from "lucide-react";
 import api from "../../services/api";
 import { getPaymentSettings, updatePaymentSettings } from "../../services/paymentService";
 import { getSession, saveSession } from "../../services/authService";
 import ImageUploader from "../../components/ImageUploader";
 
-// Owner Settings: business profile + payment method toggles + UPI QR
-// (spec §14 Settings, §15 Payment Settings).
 export default function Settings() {
   const [profile, setProfile] = useState(null);
   const [payment, setPayment] = useState(null);
@@ -46,7 +45,7 @@ export default function Settings() {
     e.preventDefault();
     setSavingPayment(true);
     try {
-      const updated = await updatePaymentSettings({
+      await updatePaymentSettings({
         upiId: payment.upiId,
         razorpay: payment.paymentMethodsEnabled.razorpay,
         upi: payment.paymentMethodsEnabled.upi,
@@ -66,12 +65,12 @@ export default function Settings() {
 
   return (
     <div className="max-w-xl space-y-6">
-      <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white">Settings</h1>
+      <h1 className="font-heading text-3xl font-bold text-slate-900">Settings</h1>
 
       <form onSubmit={saveProfile} className="card p-6 space-y-4">
-        <h2 className="font-heading font-semibold text-slate-800 dark:text-white">Business Profile</h2>
+        <h2 className="font-heading font-semibold text-slate-800">Business Profile</h2>
         <div className="flex items-center gap-4">
-          {profile.logoUrl ? <img src={profile.logoUrl} alt="" className="w-16 h-16 rounded-xl object-cover border border-gray-100 dark:border-slate-700" /> : <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-2xl">🏢</div>}
+          {profile.logoUrl ? <img src={profile.logoUrl} alt="" className="w-16 h-16 rounded-xl object-cover border border-gray-100" /> : <div className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400"><Building2 size={24} /></div>}
           <ImageUploader value={null} onChange={(url) => setProfile({ ...profile, logoUrl: url })} purpose="logo" label="Upload Logo" />
         </div>
         <div>
@@ -94,14 +93,14 @@ export default function Settings() {
       </form>
 
       <form onSubmit={savePayment} className="card p-6 space-y-4">
-        <h2 className="font-heading font-semibold text-slate-800 dark:text-white">Payment Methods</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Choose which methods residents can use to pay rent.</p>
+        <h2 className="font-heading font-semibold text-slate-800">Payment Methods</h2>
+        <p className="text-sm text-slate-500">Choose which methods residents can use to pay rent.</p>
         {[
-          ["razorpay", "☑ Smart PG (Razorpay)"],
-          ["upi", "☑ Direct UPI"],
-          ["cash", "☑ Cash"],
+          ["razorpay", "Smart PG (Razorpay)"],
+          ["upi", "Direct UPI"],
+          ["cash", "Cash"],
         ].map(([key, label]) => (
-          <label key={key} className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
+          <label key={key} className="flex items-center gap-3 text-sm text-slate-700">
             <input type="checkbox" checked={payment.paymentMethodsEnabled[key]}
               onChange={(e) => setPayment({ ...payment, paymentMethodsEnabled: { ...payment.paymentMethodsEnabled, [key]: e.target.checked } })} />
             {label}
@@ -114,7 +113,7 @@ export default function Settings() {
             <input className="input" placeholder="owner@ybl" value={payment.upiId || ""} onChange={(e) => setPayment({ ...payment, upiId: e.target.value })} />
             {payment.qrDataUrl && (
               <div className="mt-3 flex items-center gap-3">
-                <img src={payment.qrDataUrl} alt="UPI QR" className="w-24 h-24 rounded-xl border border-gray-100 dark:border-slate-700" />
+                <img src={payment.qrDataUrl} alt="UPI QR" className="w-24 h-24 rounded-xl border border-gray-100" />
                 <p className="text-xs text-slate-400">Auto-generated QR from your UPI ID — shown to residents choosing Direct UPI.</p>
               </div>
             )}

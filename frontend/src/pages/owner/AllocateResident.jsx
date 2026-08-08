@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { Lightbulb } from "lucide-react";
 import api from "../../services/api";
 
 export default function AllocateResident() {
@@ -26,7 +27,7 @@ export default function AllocateResident() {
 
     try {
       await api.post(`/rooms/${selectedRoom}/allocate`, form);
-      setMsg({ type: "success", text: `✓ ${form.residentEmail} has been assigned successfully!` });
+      setMsg({ type: "success", text: `${form.residentEmail} has been assigned successfully.` });
       setForm({ residentEmail: "", residentName: "" });
       setSelectedRoom("");
       const { data } = await api.get(`/rooms/${pgId}`);
@@ -42,22 +43,25 @@ export default function AllocateResident() {
     <div className="max-w-lg">
       <div className="flex items-center gap-3 mb-8">
         <Link to={`/owner/pg/${pgId}`} className="text-slate-400 hover:text-slate-600 text-sm">← Back to PG</Link>
-        <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">Allocate Resident</h1>
+        <h1 className="font-heading text-2xl font-bold text-slate-900">Allocate Resident</h1>
       </div>
 
-      <div className="card p-4 mb-5 bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-900/40">
-        <p className="text-amber-800 dark:text-amber-300 text-sm font-medium">💡 Tip</p>
-        <p className="text-amber-700 dark:text-amber-400 text-sm mt-1">
-          If the resident hasn't signed up yet, provide their email and name to
-          create a guest account. They can sign up later with the same email to
-          claim their account. Prefer a self-service option? Generate a{" "}
-          <Link to={`/owner/pg/${pgId}`} className="underline font-medium">QR invite</Link> from the room card instead.
-        </p>
+      <div className="card p-4 mb-5 bg-amber-50 border-amber-200 flex gap-3">
+        <Lightbulb size={18} className="text-amber-500 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-amber-800 text-sm font-medium">Tip</p>
+          <p className="text-amber-700 text-sm mt-1">
+            If the resident hasn't signed up yet, provide their email and name to
+            create a guest account. They can sign up later with the same email to
+            claim their account. Prefer a self-service option? Generate a{" "}
+            <Link to={`/owner/pg/${pgId}`} className="underline font-medium">QR invite</Link> from the room card instead.
+          </p>
+        </div>
       </div>
 
       <form onSubmit={submit} className="card p-6 space-y-4">
         {msg && (
-          <div className={`text-sm rounded-xl px-4 py-3 ${msg.type === "success" ? "bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300" : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300"}`}>
+          <div className={`text-sm rounded-xl px-4 py-3 ${msg.type === "success" ? "bg-emerald-50 border border-emerald-200 text-emerald-700" : "bg-red-50 border border-red-200 text-red-700"}`}>
             {msg.text}
           </div>
         )}

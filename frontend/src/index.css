@@ -4,31 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
-  Palette update: dark surfaces now use the navy/slate/teal swatch, light
-  surfaces use the mint/cyan swatch. Values here mirror tailwind.config.js's
-  ink/mist/brand scales — kept as literal hex because these classes are
-  plain CSS (not Tailwind utility classes), so they don't pick up config
-  changes automatically.
-
-  IMPORTANT: everything below used to live as plain CSS *after* the
-  @tailwind directives. That meant these hand-written classes (.input,
-  .btn-primary, .card, etc.) sat later in the final stylesheet than
-  Tailwind's generated utility classes, so any utility meant to override
-  them (e.g. `pl-9`/`pr-14` on an element that also has `className="input"`)
-  silently lost the cascade fight — which is why the global search bar's
-  icon/kbd padding was being ignored and overlapping the placeholder text.
-
-  Wrapping these in @layer base / @layer components tells Tailwind where
-  they belong in its intended layer order (base -> components -> utilities),
-  so utility classes now correctly override them everywhere in the app.
-*/
-
 @layer base {
   * { font-family: "Inter", sans-serif; }
   h1, h2, h3, h4, h5, h6 { font-family: "Fraunces", serif; font-weight: 600; letter-spacing: -0.01em; }
-  body { background: #F2FCFA; transition: background-color 0.2s ease; }
-  .dark body { background: #1A1F29; }
+  body { background: #F2FCFA; }
 }
 
 @layer components {
@@ -70,8 +49,6 @@
   }
   .btn-secondary:hover:not(:disabled) { border-color: #14B8A6; background: #E6FBF8; }
   .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
-  .dark .btn-secondary { background: #232837; color: #DADFE6; border-color: #3A4150; }
-  .dark .btn-secondary:hover:not(:disabled) { background: #2A303D; border-color: #14B8A6; }
 
   .btn-danger {
     display: inline-flex;
@@ -97,7 +74,6 @@
     border: 1px solid #C7F0EA;
     box-shadow: 0 1px 2px rgba(26, 31, 41, 0.04);
   }
-  .dark .card { background: #232837; border-color: #3A4150; color: #E7E9E4; box-shadow: none; }
 
   .input {
     width: 100%;
@@ -113,7 +89,6 @@
     border-color: #14B8A6;
     box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.16);
   }
-  .dark .input { background: #1A1F29; border-color: #3A4150; color: #E7E9E4; }
 
   .label {
     display: block;
@@ -124,7 +99,6 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  .dark .label { color: #8A9490; }
 
   /* ---- Status badges — stamp-like, square, not pill-shaped --------------- */
 
@@ -136,8 +110,7 @@
   .badge-purple { background:#F1EEF6; color:#5B4B84; padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid #D9D0E8; }
 
   /* ---- Money — tabular mono numerals so every rent/price figure in the
-     app reads like a ledger entry rather than default UI text. Apply with
-     className="amount" wherever a rupee figure is the focal number. ------ */
+     app reads like a ledger entry rather than default UI text. ---------- */
 
   .amount {
     font-family: "IBM Plex Mono", ui-monospace, monospace;
@@ -145,7 +118,6 @@
     letter-spacing: -0.02em;
   }
 
-  /* Small uppercase kicker used above a heading, e.g. "OWNER · SETTLEMENTS" */
   .eyebrow {
     font-family: "IBM Plex Mono", ui-monospace, monospace;
     font-size: 11px;
@@ -155,12 +127,21 @@
     color: #0F9488;
   }
 
-  /* Perforated-stub edge — signature motif reused on receipt-like cards
-     (invoices, the homepage hero mock). Purely decorative dashed rule. */
+  /* Perforated-stub edge — signature motif reused on receipt-like cards. */
   .stub-edge {
     border-left: 2px dashed #C7F0EA;
   }
-  .dark .stub-edge { border-left-color: #3A4150; }
+
+  /* Ledger row — used for dashboard stats instead of a card grid, so the
+     numbers read like line items in a book rather than dashboard tiles. */
+  .ledger-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 4px;
+    border-bottom: 1px solid #EAF6F3;
+  }
+  .ledger-row:last-child { border-bottom: none; }
 
   .sidebar-link {
     display: flex;
@@ -182,26 +163,15 @@
   .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
   .skeleton { background: linear-gradient(90deg, #DFFAF6 25%, #C7F0EA 37%, #DFFAF6 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; border-radius: 8px; }
-  .dark .skeleton { background: linear-gradient(90deg, #232837 25%, #2A303D 37%, #232837 63%); background-size: 400% 100%; }
 
-  /* Dark scrollbar for the dark sidebar nav (Owner/Resident/Admin layouts) */
   .sidebar-scroll {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
   }
-  .sidebar-scroll::-webkit-scrollbar {
-    width: 6px;
-  }
-  .sidebar-scroll::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .sidebar-scroll::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.15);
-    border-radius: 999px;
-  }
-  .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.28);
-  }
+  .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+  .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-scroll::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.15); border-radius: 999px; }
+  .sidebar-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.28); }
 }
 
 .page-fade { animation: fadeUp 0.25s ease both; }

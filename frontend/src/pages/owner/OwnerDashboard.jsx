@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { DoorOpen, Users, IndianRupee, Flag, MapPin, Plus } from "lucide-react";
 import api from "../../services/api";
 import { getSession } from "../../services/authService";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -48,34 +49,53 @@ export default function OwnerDashboard() {
     <div>
       <div className="flex justify-between items-center mb-8 flex-wrap gap-3">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white">
-            Good morning, {user?.name?.split(" ")[0]} 👋
+          <h1 className="font-heading text-3xl font-bold text-slate-900">
+            Good morning, {user?.name?.split(" ")[0]}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Here's what's happening with your PGs today</p>
+          <p className="text-slate-500 mt-1">Here's what's happening with your PGs today</p>
         </div>
-        <Link to="/owner/add-pg" className="btn-primary">+ Add PG</Link>
+        <Link to="/owner/add-pg" className="btn-primary inline-flex items-center gap-1.5">
+          <Plus size={16} /> Add PG
+        </Link>
       </div>
 
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
-          {[
-            { label: "My PGs", value: stats.totalPGs, color: "text-brand-500", bg: "bg-brand-50 dark:bg-brand-900/20", icon: "🏘️" },
-            { label: "Total Rooms", value: stats.totalRooms, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-900/20", icon: "🚪" },
-            { label: "Residents", value: stats.totalResidents, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20", icon: "👥" },
-            { label: "Occupancy", value: `${stats.occupancyPct}%`, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-900/20", icon: "📈" },
-            { label: "Pending Rents", value: stats.pendingPayments, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-900/20", icon: "₹" },
-            { label: "Open Issues", value: stats.openComplaints, color: "text-red-500", bg: "bg-red-50 dark:bg-red-900/20", icon: "⚑" },
-          ].map((s) => (
-            <div key={s.label} className={`card p-4 ${s.bg} border-0`}>
-              <div className="text-2xl mb-2">{s.icon}</div>
-              <p className={`font-heading text-2xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">{s.label}</p>
+        <div className="card p-5 mb-8">
+          <div className="flex items-end justify-between mb-2">
+            <p className="eyebrow">Occupancy</p>
+            <p className="text-xs text-slate-400">across {stats.totalPGs} PG{stats.totalPGs !== 1 ? "s" : ""}</p>
+          </div>
+          <p className="amount font-heading text-5xl font-bold text-ink-900 mb-1">{stats.occupancyPct}%</p>
+          <div className="w-full bg-slate-100 rounded-full h-1.5 mb-5">
+            <div className="h-1.5 rounded-full bg-brand-500" style={{ width: `${stats.occupancyPct}%` }} />
+          </div>
+
+          <div className="divide-y divide-[#EAF6F3]">
+            <div className="ledger-row">
+              <span className="flex items-center gap-2.5 text-sm text-slate-600"><DoorOpen size={17} className="text-slate-400" /> Total rooms</span>
+              <span className="amount font-semibold text-slate-800">{stats.totalRooms}</span>
             </div>
-          ))}
+            <div className="ledger-row">
+              <span className="flex items-center gap-2.5 text-sm text-slate-600"><Users size={17} className="text-slate-400" /> Residents</span>
+              <span className="amount font-semibold text-slate-800">{stats.totalResidents}</span>
+            </div>
+            <div className="ledger-row">
+              <span className="flex items-center gap-2.5 text-sm text-slate-600"><IndianRupee size={17} className="text-slate-400" /> Pending rents this month</span>
+              <span className={`amount font-semibold ${stats.pendingPayments > 0 ? "text-amber-600" : "text-slate-800"}`}>{stats.pendingPayments}</span>
+            </div>
+            <div className="ledger-row">
+              <span className="flex items-center gap-2.5 text-sm text-slate-600"><Flag size={17} className="text-slate-400" /> Open complaints</span>
+              <span className={`amount font-semibold ${stats.openComplaints > 0 ? "text-red-500" : "text-slate-800"}`}>{stats.openComplaints}</span>
+            </div>
+            <div className="ledger-row">
+              <span className="flex items-center gap-2.5 text-sm text-slate-600"><IndianRupee size={17} className="text-slate-400" /> Revenue this month</span>
+              <span className="amount font-semibold text-emerald-600">₹{stats.revenue.toLocaleString()}</span>
+            </div>
+          </div>
         </div>
       )}
 
-      <h2 className="font-heading font-bold text-xl text-slate-900 dark:text-white mb-4">My PGs</h2>
+      <h2 className="font-heading font-bold text-xl text-slate-900 mb-4">My PGs</h2>
 
       {loading ? (
         <div className="grid md:grid-cols-2 gap-4">
@@ -83,10 +103,9 @@ export default function OwnerDashboard() {
         </div>
       ) : pgs.length === 0 ? (
         <div className="card p-12 text-center text-slate-400">
-          <p className="text-5xl mb-4">🏘️</p>
-          <p className="font-heading font-semibold text-slate-600 dark:text-slate-300 text-lg">No PGs yet</p>
+          <p className="font-heading font-semibold text-slate-600 text-lg">No PGs yet</p>
           <p className="text-sm mt-1 mb-6">Start by adding your first PG listing</p>
-          <Link to="/owner/add-pg" className="btn-primary">+ Add Your First PG</Link>
+          <Link to="/owner/add-pg" className="btn-primary">Add Your First PG</Link>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
@@ -94,18 +113,18 @@ export default function OwnerDashboard() {
             <Link key={pg._id} to={`/owner/pg/${pg._id}`}
               className={`card p-5 group block hover:border-brand-200 transition ${pg.isArchived ? "opacity-60" : ""}`}>
               {pg.images?.[0] && (
-                <img src={pg.images[0].url} alt={pg.name} className="w-full h-36 object-cover rounded-xl mb-3 border border-gray-100 dark:border-slate-700" />
+                <img src={pg.images[0].url} alt={pg.name} className="w-full h-36 object-cover rounded-xl mb-3 border border-gray-100" />
               )}
               <div className="flex justify-between items-start mb-3">
-                <h3 className="font-heading font-semibold text-slate-900 dark:text-white group-hover:text-brand-500 transition">
+                <h3 className="font-heading font-semibold text-slate-900 group-hover:text-brand-500 transition">
                   {pg.name} {pg.isArchived && <span className="badge-gray ml-1">Archived</span>}
                 </h3>
                 <span className={pg.vacantBeds > 0 ? "badge-green" : "badge-red"}>{pg.vacantBeds} beds vacant</span>
               </div>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mb-3">📍 {pg.city}</p>
-              <div className="flex gap-4 text-sm text-slate-500 dark:text-slate-400 mb-4">
-                <span>🚪 {pg.totalRooms} rooms</span>
-                <span>👥 {pg.totalResidents} residents</span>
+              <p className="text-slate-500 text-sm mb-3 flex items-center gap-1"><MapPin size={13} /> {pg.city}</p>
+              <div className="flex gap-4 text-sm text-slate-500 mb-4">
+                <span className="flex items-center gap-1.5"><DoorOpen size={15} /> {pg.totalRooms} rooms</span>
+                <span className="flex items-center gap-1.5"><Users size={15} /> {pg.totalResidents} residents</span>
               </div>
               <div className="flex gap-2 flex-wrap">
                 <Link to={`/owner/pg/${pg._id}/edit`} onClick={(e) => e.stopPropagation()} className="btn-secondary text-sm">Edit</Link>

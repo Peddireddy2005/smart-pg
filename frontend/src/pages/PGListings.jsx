@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
+import { MapPin, SearchX, Home } from "lucide-react";
 import api from "../services/api";
 import StarRating from "../components/StarRating";
 
@@ -15,9 +16,6 @@ export default function PGListings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
 
-  // When rendered inside the owner/resident dashboard shells, keep the
-  // layout minimal (no full-page background) and route PG links to the
-  // matching nested path so the person never leaves their dashboard.
   const embedded = location.pathname.startsWith("/owner") || location.pathname.startsWith("/resident");
   const basePath = location.pathname.startsWith("/owner")
     ? "/owner/pg-listings"
@@ -111,9 +109,9 @@ export default function PGListings() {
   };
 
   return (
-    <div className={embedded ? "" : "min-h-screen bg-[#f8f7f4] dark:bg-slate-900"}>
+    <div className={embedded ? "" : "min-h-screen bg-[#f8f7f4]"}>
       <div className={embedded ? "" : "max-w-6xl mx-auto px-6 py-8"}>
-        <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-6">Browse PGs</h1>
+        <h1 className="font-heading text-3xl font-bold text-slate-900 mb-6">Browse PGs</h1>
 
         <form onSubmit={applyFilters} className="card p-5 mb-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
@@ -143,7 +141,7 @@ export default function PGListings() {
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {AMENITY_FILTERS.map((a) => (
               <button key={a.key} type="button" onClick={() => toggleAmenity(a.key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${localAmenities.has(a.key) ? "bg-brand-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${localAmenities.has(a.key) ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-600"}`}>
                 {a.label}
               </button>
             ))}
@@ -170,8 +168,8 @@ export default function PGListings() {
           </div>
         ) : pgs.length === 0 ? (
           <div className="card p-12 text-center text-slate-400">
-            <p className="text-4xl mb-3">🔍</p>
-            <p className="font-heading font-semibold text-slate-600 dark:text-slate-300">No PGs found</p>
+            <SearchX size={32} className="mx-auto mb-3" strokeWidth={1.5} />
+            <p className="font-heading font-semibold text-slate-600">No PGs found</p>
             <p className="text-sm mt-1">Try adjusting your filters</p>
           </div>
         ) : (
@@ -182,31 +180,33 @@ export default function PGListings() {
                   {pg.images?.[0] ? (
                     <img src={pg.images[0].url} alt={pg.name} className="w-full h-40 object-cover" />
                   ) : (
-                    <div className="w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center text-4xl">🏠</div>
+                    <div className="w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                      <Home size={32} className="text-slate-300" strokeWidth={1.5} />
+                    </div>
                   )}
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-1">
-                      <h2 className="font-heading font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition line-clamp-1">{pg.name}</h2>
+                      <h2 className="font-heading font-bold text-slate-900 group-hover:text-brand-500 transition line-clamp-1">{pg.name}</h2>
                       <span className={`text-xs shrink-0 ml-2 ${pg.vacantBeds > 0 ? "badge-green" : "badge-red"}`}>
                         {pg.vacantBeds > 0 ? `${pg.vacantBeds} vacant` : "Full"}
                       </span>
                     </div>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-2">📍 {pg.locality ? `${pg.locality}, ` : ""}{pg.city}</p>
+                    <p className="text-slate-500 text-sm mb-2 flex items-center gap-1"><MapPin size={13} /> {pg.locality ? `${pg.locality}, ` : ""}{pg.city}</p>
                     {pg.ratingsCount > 0 && (
                       <div className="flex items-center gap-1 mb-2">
                         <StarRating value={Math.round(pg.ratingsAverage)} readOnly size="text-sm" />
-                        <span className="text-xs text-slate-500 dark:text-slate-400">({pg.ratingsCount})</span>
+                        <span className="text-xs text-slate-500">({pg.ratingsCount})</span>
                       </div>
                     )}
                     {pg.rentRange?.min > 0 && (
-                      <p className="font-heading font-bold text-brand-500 text-sm">
+                      <p className="amount font-heading font-bold text-brand-500 text-sm">
                         Starting ₹{pg.rentRange.min.toLocaleString()}/mo
                       </p>
                     )}
                     {pg.amenities?.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {pg.amenities.slice(0, 3).map((a, i) => (
-                          <span key={i} className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[11px] px-2 py-0.5 rounded-lg">{a}</span>
+                          <span key={i} className="bg-slate-100 text-slate-600 text-[11px] px-2 py-0.5 rounded-lg">{a}</span>
                         ))}
                         {pg.amenities.length > 3 && (
                           <span className="text-[11px] text-slate-400">+{pg.amenities.length - 3} more</span>
@@ -225,7 +225,7 @@ export default function PGListings() {
                   const current = { search, city, minRent, maxRent, gender, sort, page: String(p) };
                   return (
                     <Link key={p} to={`${basePath}?${new URLSearchParams(current)}`}
-                      className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition ${page === p ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300"}`}>
+                      className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition ${page === p ? "bg-brand-500 text-white" : "bg-white border border-gray-200 text-slate-600 hover:border-brand-300"}`}>
                       {p}
                     </Link>
                   );

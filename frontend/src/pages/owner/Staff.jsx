@@ -88,10 +88,10 @@ export default function Staff() {
 
   return (
     <div>
-      <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-6">Staff Management</h1>
+      <h1 className="font-heading text-3xl font-bold text-slate-900 mb-6">Staff Management</h1>
 
       <form onSubmit={submit} className="card p-6 mb-8 space-y-4">
-        <h2 className="font-heading font-semibold text-slate-800 dark:text-white">Add Staff Member</h2>
+        <h2 className="font-heading font-semibold text-slate-800">Add Staff Member</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">PG</label>
@@ -131,15 +131,15 @@ export default function Staff() {
             <div key={s._id} className={`card p-5 ${!s.isActive ? "opacity-60" : ""}`}>
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <p className="font-heading font-bold text-slate-900 dark:text-white">{s.name}</p>
+                  <p className="font-heading font-bold text-slate-900">{s.name}</p>
                   <span className="badge-blue">{s.role}</span>
                 </div>
                 <span className={isPresentToday(s) === false ? "badge-red" : isPresentToday(s) ? "badge-green" : "badge-gray"}>
                   {isPresentToday(s) === false ? "Absent Today" : isPresentToday(s) ? "Present Today" : "Not Marked"}
                 </span>
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{s.phone || "No phone"} · {s.pg?.name}</p>
-              {s.salary > 0 && <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">₹{s.salary.toLocaleString()}/mo</p>}
+              <p className="text-sm text-slate-500">{s.phone || "No phone"} · {s.pg?.name}</p>
+              {s.salary > 0 && <p className="text-sm text-slate-600 mt-1">₹{s.salary.toLocaleString()}/mo</p>}
               <div className="flex gap-2 mt-3 flex-wrap">
                 <button onClick={() => toggleToday(s)} className="btn-secondary text-xs">Mark {isPresentToday(s) ? "Absent" : "Present"}</button>
                 <button onClick={() => toggleActive(s)} className="btn-secondary text-xs">{s.isActive ? "Deactivate" : "Activate"}</button>
@@ -154,7 +154,7 @@ export default function Staff() {
         <div className="flex justify-center gap-2 mt-6">
           {[...Array(totalPages)].map((_, i) => (
             <button key={i} onClick={() => load(i + 1)}
-              className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition ${page === i + 1 ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"}`}>
+              className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition ${page === i + 1 ? "bg-brand-500 text-white" : "bg-white border border-gray-200 text-slate-600"}`}>
               {i + 1}
             </button>
           ))}

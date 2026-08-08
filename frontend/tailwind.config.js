@@ -1,6 +1,5 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: "class",
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
@@ -10,8 +9,6 @@ export default {
         data: ["\"IBM Plex Mono\"", "ui-monospace", "monospace"],
       },
       colors: {
-        // Primary accent — teal, replaces the old aged-brass "brand" scale.
-        // Derived from the bright teal band in the dark-theme swatch.
         brand: {
           50: "#E6FBF8",
           100: "#C7F0EA",
@@ -24,8 +21,6 @@ export default {
           800: "#0A6058",
           900: "#084A44",
         },
-        // Dark-surface scale — from the left (dark) swatch: near-black navy,
-        // slate, teal accent, light gray.
         ink: {
           50: "#EEEEEE",
           100: "#DADFE6",
@@ -35,8 +30,6 @@ export default {
           900: "#232837",
           950: "#1A1F29",
         },
-        // Light-surface scale — from the right (light) swatch: pale mint,
-        // light cyan, pale teal, medium teal.
         paper: {
           DEFAULT: "#DFFAF6",
           raised: "#F2FCFA",
@@ -49,7 +42,6 @@ export default {
           500: "#74C7BD",
           600: "#4FA89C",
         },
-        // Kept for any leftover references to the old sage/rust accents.
         sage: {
           50: "#EEF4EF",
           200: "#C6DBC9",

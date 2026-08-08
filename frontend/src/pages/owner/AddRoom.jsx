@@ -3,8 +3,6 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 
-// Room type is derived from bed capacity rather than picked manually —
-// keeps it consistent and removes a redundant decision for the owner.
 const deriveRoomType = (capacity) => {
   const n = Number(capacity);
   if (n === 1) return "Single";
@@ -40,10 +38,10 @@ export default function AddRoom() {
     <div className="max-w-lg">
       <div className="flex items-center gap-3 mb-8">
         <Link to={`/owner/pg/${pgId}`} className="text-slate-400 hover:text-slate-600 text-sm">← Back to PG</Link>
-        <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">Add Room</h1>
+        <h1 className="font-heading text-2xl font-bold text-slate-900">Add Room</h1>
       </div>
 
-      {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm rounded-xl px-4 py-3 mb-5">{error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">{error}</div>}
 
       <form onSubmit={submit} className="card p-6 space-y-4">
         <div className="grid grid-cols-2 gap-4">

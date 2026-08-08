@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, User, Building2, DoorOpen, Flag, IndianRupee, Loader2 } from "lucide-react";
+import { Search, User, Building2, DoorOpen, Flag, IndianRupee, Loader2, SearchX } from "lucide-react";
 import { globalSearch } from "../services/searchService";
 
 const SECTIONS = [
@@ -29,7 +29,6 @@ export default function GlobalSearch() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Cmd/Ctrl+K focuses the search box from anywhere in the owner dashboard.
   useEffect(() => {
     const handleKey = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -96,8 +95,8 @@ export default function GlobalSearch() {
   return (
     <div className="relative w-full max-w-sm" ref={ref}>
       <div
-        className={`flex items-center gap-2 rounded-xl border bg-white dark:bg-slate-800 pl-3 pr-2 h-10 transition-all
-          ${focused ? "border-brand-400 shadow-[0_0_0_3px_rgba(184,130,60,0.14)]" : "border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600"}`}
+        className={`flex items-center gap-2 rounded-xl border bg-white pl-3 pr-2 h-10 transition-all
+          ${focused ? "border-brand-400 shadow-[0_0_0_3px_rgba(20,184,166,0.14)]" : "border-gray-200 hover:border-gray-300"}`}
       >
         {loading ? (
           <Loader2 size={16} className="shrink-0 text-slate-400 animate-spin" />
@@ -107,7 +106,7 @@ export default function GlobalSearch() {
 
         <input
           ref={inputRef}
-          className="flex-1 min-w-0 bg-transparent text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none"
+          className="flex-1 min-w-0 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none"
           placeholder="Search residents, PGs, rooms..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -119,28 +118,28 @@ export default function GlobalSearch() {
           <button
             type="button"
             onClick={clear}
-            className="shrink-0 text-slate-300 hover:text-slate-500 dark:hover:text-slate-300 text-xs font-semibold px-1.5"
+            className="shrink-0 text-slate-300 hover:text-slate-500 text-xs font-semibold px-1.5"
             aria-label="Clear search"
           >
             ✕
           </button>
         ) : (
-          <kbd className="hidden md:flex shrink-0 items-center gap-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-1 rounded-md">
+          <kbd className="hidden md:flex shrink-0 items-center gap-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-1 rounded-md">
             ⌘K
           </kbd>
         )}
       </div>
 
       {open && q && (
-        <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-2xl shadow-xl ring-1 ring-black/5 dark:ring-white/10 border border-gray-100 dark:border-slate-700 z-50 max-h-96 overflow-y-auto overflow-x-hidden">
+        <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl ring-1 ring-black/5 border border-gray-100 z-50 max-h-96 overflow-y-auto overflow-x-hidden">
           {loading && !results && (
             <p className="text-slate-400 text-sm p-5 text-center">Searching...</p>
           )}
 
           {!loading && !hasResults && (
             <div className="p-6 text-center">
-              <p className="text-2xl mb-1">🔎</p>
-              <p className="text-slate-400 text-sm">No matches for "<span className="text-slate-600 dark:text-slate-300 font-medium">{q}</span>"</p>
+              <SearchX size={22} className="mx-auto text-slate-300 mb-1.5" />
+              <p className="text-slate-400 text-sm">No matches for "<span className="text-slate-600 font-medium">{q}</span>"</p>
             </div>
           )}
 
@@ -148,7 +147,7 @@ export default function GlobalSearch() {
             const items = results?.[key];
             if (!items?.length) return null;
             return (
-              <div key={key} className={`p-2 ${i > 0 ? "border-t border-gray-100 dark:border-slate-700" : ""}`}>
+              <div key={key} className={`p-2 ${i > 0 ? "border-t border-gray-100" : ""}`}>
                 <p className="text-[11px] uppercase font-bold tracking-wide text-slate-400 px-2 py-1.5">{label}</p>
                 {items.map((item) => {
                   const row = rowFor(key, item);
@@ -156,13 +155,13 @@ export default function GlobalSearch() {
                     <button
                       key={item._id}
                       onClick={row.onClick}
-                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition flex items-center gap-2.5"
+                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-slate-50 transition flex items-center gap-2.5"
                     >
-                      <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                        <Icon size={14} className="text-slate-500 dark:text-slate-300" />
+                      <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                        <Icon size={14} className="text-slate-500" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm text-slate-700 dark:text-slate-200 truncate">{row.label}</span>
+                        <span className="block text-sm text-slate-700 truncate">{row.label}</span>
                         {row.sub && <span className="block text-xs text-slate-400 truncate">{row.sub}</span>}
                       </span>
                     </button>

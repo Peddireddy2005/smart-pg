@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { Utensils, Snowflake, Car, Wifi, Shirt } from "lucide-react";
 import api from "../../services/api";
 import { uploadPGImages, deletePGImage } from "../../services/uploadService";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -15,8 +16,8 @@ function F({ label, field, form, setForm, ...props }) {
 }
 
 const AMENITY_TOGGLES = [
-  ["hasFood", "🍽️ Food"], ["hasAC", "❄️ AC"], ["hasParking", "🅿️ Parking"],
-  ["hasWifi", "📶 WiFi"], ["hasLaundry", "🧺 Laundry"],
+  ["hasFood", Utensils, "Food"], ["hasAC", Snowflake, "AC"], ["hasParking", Car, "Parking"],
+  ["hasWifi", Wifi, "WiFi"], ["hasLaundry", Shirt, "Laundry"],
 ];
 
 const COMMON_AMENITIES = [
@@ -112,22 +113,22 @@ export default function EditPG() {
     <div className="max-w-xl">
       <div className="flex items-center gap-3 mb-8">
         <Link to={`/owner/pg/${id}`} className="text-slate-400 hover:text-slate-600 text-sm">← Back</Link>
-        <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">Edit PG</h1>
+        <h1 className="font-heading text-2xl font-bold text-slate-900">Edit PG</h1>
       </div>
 
       <div className="card p-6 mb-5">
-        <h2 className="font-heading font-semibold text-slate-800 dark:text-white mb-3">Photos</h2>
+        <h2 className="font-heading font-semibold text-slate-800 mb-3">Photos</h2>
         <div className="grid grid-cols-3 gap-3 mb-3">
           {images.map((img) => (
             <div key={img._id} className="relative group">
-              <img src={img.url} alt="" className="w-full h-24 object-cover rounded-xl border border-gray-100 dark:border-slate-700" />
+              <img src={img.url} alt="" className="w-full h-24 object-cover rounded-xl border border-gray-100" />
               <button type="button" onClick={() => setRemovingImage(img._id)}
                 className="absolute top-1 right-1 bg-black/60 text-white text-xs w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition">✕</button>
             </div>
           ))}
           {images.length < 8 && (
             <button type="button" disabled={uploading} onClick={() => fileRef.current.click()}
-              className="h-24 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl text-slate-400 hover:border-brand-400 hover:text-brand-500 transition text-sm">
+              className="h-24 border-2 border-dashed border-gray-300 rounded-xl text-slate-400 hover:border-brand-400 hover:text-brand-500 transition text-sm">
               {uploading ? "Uploading..." : "+ Add Photo"}
             </button>
           )}
@@ -166,10 +167,10 @@ export default function EditPG() {
           <label className="label">Facilities</label>
           <p className="text-xs text-slate-400 -mt-1 mb-2">Used for search filters on the listings page.</p>
           <div className="flex flex-wrap gap-2">
-            {AMENITY_TOGGLES.map(([key, label]) => (
+            {AMENITY_TOGGLES.map(([key, Icon, label]) => (
               <button key={key} type="button" onClick={() => setForm({ ...form, [key]: !form[key] })}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${form[key] ? "bg-brand-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
-                {label}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1.5 ${form[key] ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-600"}`}>
+                <Icon size={13} /> {label}
               </button>
             ))}
           </div>
@@ -181,7 +182,7 @@ export default function EditPG() {
           <div className="flex flex-wrap gap-2 mb-2">
             {COMMON_AMENITIES.map((a) => (
               <button key={a} type="button" onClick={() => toggleAmenity(a)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${form.amenities.includes(a) ? "bg-brand-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${form.amenities.includes(a) ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-600"}`}>
                 {a}
               </button>
             ))}
@@ -210,7 +211,7 @@ export default function EditPG() {
           <textarea className="input" rows={2} value={form.rules} onChange={(e) => setForm({ ...form, rules: e.target.value })} />
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <label className="flex items-center gap-2 text-sm text-slate-600">
           <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
           Listed publicly (uncheck to hide from search without deleting)
         </label>

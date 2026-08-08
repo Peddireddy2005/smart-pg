@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { Utensils, Snowflake, Car, Wifi, Shirt } from "lucide-react";
 import api from "../../services/api";
 
 function Field({ label, field, form, setForm, ...props }) {
@@ -13,8 +14,8 @@ function Field({ label, field, form, setForm, ...props }) {
 }
 
 const AMENITY_TOGGLES = [
-  ["hasFood", "🍽️ Food"], ["hasAC", "❄️ AC"], ["hasParking", "🅿️ Parking"],
-  ["hasWifi", "📶 WiFi"], ["hasLaundry", "🧺 Laundry"],
+  ["hasFood", Utensils, "Food"], ["hasAC", Snowflake, "AC"], ["hasParking", Car, "Parking"],
+  ["hasWifi", Wifi, "WiFi"], ["hasLaundry", Shirt, "Laundry"],
 ];
 
 const COMMON_AMENITIES = [
@@ -68,10 +69,10 @@ export default function AddPG() {
     <div className="max-w-xl">
       <div className="flex items-center gap-3 mb-8">
         <Link to="/owner/dashboard" className="text-slate-400 hover:text-slate-600 text-sm">← Back</Link>
-        <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">Add New PG</h1>
+        <h1 className="font-heading text-2xl font-bold text-slate-900">Add New PG</h1>
       </div>
 
-      {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm rounded-xl px-4 py-3 mb-5">{error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">{error}</div>}
 
       <form onSubmit={submit} className="card p-6 space-y-4">
         <Field label="PG Name *" field="name" form={form} setForm={setForm} placeholder="e.g. Sai Residency" required />
@@ -105,10 +106,10 @@ export default function AddPG() {
           <label className="label">Facilities</label>
           <p className="text-xs text-slate-400 -mt-1 mb-2">Used for search filters on the listings page.</p>
           <div className="flex flex-wrap gap-2">
-            {AMENITY_TOGGLES.map(([key, label]) => (
+            {AMENITY_TOGGLES.map(([key, Icon, label]) => (
               <button key={key} type="button" onClick={() => setForm({ ...form, [key]: !form[key] })}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${form[key] ? "bg-brand-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
-                {label}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1.5 ${form[key] ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-600"}`}>
+                <Icon size={13} /> {label}
               </button>
             ))}
           </div>
@@ -120,7 +121,7 @@ export default function AddPG() {
           <div className="flex flex-wrap gap-2 mb-2">
             {COMMON_AMENITIES.map((a) => (
               <button key={a} type="button" onClick={() => toggleAmenity(a)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${form.amenities.includes(a) ? "bg-brand-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${form.amenities.includes(a) ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-600"}`}>
                 {a}
               </button>
             ))}
@@ -151,7 +152,7 @@ export default function AddPG() {
             value={form.rules} onChange={(e) => setForm({ ...form, rules: e.target.value })} />
         </div>
 
-        <p className="text-xs text-slate-400">💡 You can add room photos after creating the PG from the PG detail page.</p>
+        <p className="text-xs text-slate-400">You can add room photos after creating the PG from the PG detail page.</p>
 
         <button disabled={loading} className="btn-primary w-full justify-center">
           {loading ? "Creating..." : "Create PG"}
